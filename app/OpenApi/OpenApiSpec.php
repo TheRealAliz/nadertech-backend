@@ -33,6 +33,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "username", type: "string", example: "ali_ahmadi"),
         new OA\Property(property: "email", type: "string", format: "email", example: "ali@example.com"),
         new OA\Property(property: "mobile", type: "string", example: "09123456789"),
+        new OA\Property(property: "avatar", type: "string", example: "/avatars/avatar_5_1734567890.webp"),
         new OA\Property(property: "mobile_verified_at", type: "string", format: "date-time", nullable: true),
         new OA\Property(property: "created_at", type: "string", format: "date-time"),
     ],
