@@ -23,7 +23,21 @@ use OpenApi\Attributes as OA;
     scheme: 'bearer',
     bearerFormat: 'Token'
 )]
-
+#[OA\Schema(
+    schema: "UserResource",
+    title: "User Resource",
+    description: "User resource representation",
+    properties: [
+        new OA\Property(property: "id", type: "integer", example: 1),
+        new OA\Property(property: "full_name", type: "string", example: "علی احمدی"),
+        new OA\Property(property: "username", type: "string", example: "ali_ahmadi"),
+        new OA\Property(property: "email", type: "string", format: "email", example: "ali@example.com"),
+        new OA\Property(property: "mobile", type: "string", example: "09123456789"),
+        new OA\Property(property: "mobile_verified_at", type: "string", format: "date-time", nullable: true),
+        new OA\Property(property: "created_at", type: "string", format: "date-time"),
+    ],
+    type: "object"
+)]
 class OpenApiSpec
 {
 }
