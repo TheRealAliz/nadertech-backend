@@ -275,16 +275,31 @@ class AuthController extends Controller
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'Reset code sent if user exists',
+                description: 'Reset code sent',
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'message', type: 'string', example: 'اگر حسابی با این اطلاعات وجود داشته باشد، کد بازیابی ارسال می‌شود.'),
                         new OA\Property(property: 'expires_in', type: 'integer', example: 300),
-                        new OA\Property(property: 'dev_code', type: 'string', example: '123456', nullable: true),
+                        new OA\Property(
+                            property: 'dev_code',
+                            type: 'string',
+                            example: '123456',
+                            nullable: true,
+                            description: 'Only in local environment for testing'
+                        ),
                     ]
                 )
             ),
-            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                        new OA\Property(property: 'errors', type: 'object', example: ['login' => ['The login field is required.']])
+                    ]
+                )
+            ),
         ]
     )]
     public function forgotPassword(ForgotPasswordRequest $request, PasswordResetService $service): JsonResponse
@@ -325,7 +340,8 @@ class AuthController extends Controller
                     new OA\Property(
                         property: 'code',
                         type: 'string',
-                        example: '123456'
+                        example: '123456',
+                        description: '6-digit verification code'
                     ),
                 ]
             )
@@ -337,13 +353,32 @@ class AuthController extends Controller
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'message', type: 'string', example: 'کد تایید شد.'),
-                        new OA\Property(property: 'reset_token', type: 'string', example: 'eyJpdiI6IjEyMyJ9...'),
+                        new OA\Property(property: 'reset_token', type: 'string', example: 'aB3dE5fG7hI9jK1lMn2oP3qR4sT5uV6wX7yZ8'),
                         new OA\Property(property: 'expires_in', type: 'integer', example: 300),
                     ]
                 )
             ),
-            new OA\Response(response: 401, description: 'Invalid or expired code'),
-            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(
+                response: 401,
+                description: 'Invalid or expired code',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'کد وارد شده نامعتبر یا منقضی شده است.'),
+                        new OA\Property(property: 'error_key', type: 'string', example: 'invalid_code'),
+                        new OA\Property(property: 'remaining_attempts', type: 'integer', example: 3),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                        new OA\Property(property: 'errors', type: 'object', example: ['code' => ['The code must be 6 digits.']])
+                    ]
+                )
+            ),
         ]
     )]
     public function verifyForgotPasswordCode(VerifyForgotPasswordCodeRequest $request, PasswordResetService $service): JsonResponse
@@ -393,7 +428,8 @@ class AuthController extends Controller
                     new OA\Property(
                         property: 'reset_token',
                         type: 'string',
-                        example: 'yFVEFhOUMq5Q24EKiwuyLj9lfiNsfW0UC49rp2b5nQ3ZwPUSKKoFbm9FrcWqOYr5'
+                        example: 'aB3dE5fG7hI9jK1lMn2oP3qR4sT5uV6wX7yZ8',
+                        description: 'Reset token received from verify endpoint'
                     ),
                     new OA\Property(
                         property: 'password',
@@ -420,8 +456,27 @@ class AuthController extends Controller
                     ]
                 )
             ),
-            new OA\Response(response: 401, description: 'Invalid or expired reset token'),
-            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(
+                response: 401,
+                description: 'Invalid or expired reset token',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'توکن بازیابی نامعتبر یا منقضی شده است.'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                        new OA\Property(property: 'errors', type: 'object', example: [
+                            'password' => ['The password confirmation does not match.'],
+                        ])
+                    ]
+                )
+            ),
         ]
     )]
     public function resetPassword(ResetPasswordRequest $request, PasswordResetService $service): JsonResponse
