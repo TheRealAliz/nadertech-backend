@@ -212,6 +212,63 @@ class AuthController extends Controller
             ->first();
     }
 
+    #[OA\Post(
+        path: '/api/auth/register',
+        tags: ['Auth'],
+        summary: 'Register a new user',
+        description: 'Creates a new user account and returns access token',
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['full_name', 'username', 'email', 'mobile', 'password', 'password_confirmation'],
+                properties: [
+                    new OA\Property(property: 'full_name', type: 'string', maxLength: 255, example: 'علی احمدی'),
+                    new OA\Property(property: 'username', type: 'string', minLength: 3, maxLength: 50, example: 'ali_ahmadi', description: 'Only letters, numbers, dash and underscore'),
+                    new OA\Property(property: 'email', type: 'string', format: 'email', maxLength: 255, example: 'ali@example.com'),
+                    new OA\Property(property: 'mobile', type: 'string', example: '09123456789', description: '11 digits starting with 09'),
+                    new OA\Property(property: 'password', type: 'string', format: 'password', minLength: 8, example: '12345678'),
+                    new OA\Property(property: 'password_confirmation', type: 'string', format: 'password', example: '12345678'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'User registered successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'ثبت‌نام با موفقیت انجام شد.'),
+                        new OA\Property(
+                            property: 'data',
+                            properties: [
+                                new OA\Property(property: 'user', ref: '#/components/schemas/UserResource'),
+                                new OA\Property(property: 'access_token', type: 'string', example: '1|abc123def456...'),
+                                new OA\Property(property: 'token_type', type: 'string', example: 'Bearer'),
+                            ],
+                            type: 'object'
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                        new OA\Property(
+                            property: 'errors',
+                            type: 'object',
+                            example: [
+                                'email' => ['The email has already been taken.'],
+                                'mobile' => ['The mobile has already been taken.']
+                            ]
+                        )
+                    ]
+                )
+            ),
+        ]
+    )]
     public function register(RegisterRequest $request): JsonResponse
     {
         $validated = $request->validated();
@@ -236,6 +293,39 @@ class AuthController extends Controller
         ], 201);
     }
 
+    #[OA\Get(
+        path: '/api/auth/me',
+        tags: ['Auth'],
+        summary: 'Get authenticated user profile',
+        description: 'Returns the currently authenticated user information',
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'User profile retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            properties: [
+                                new OA\Property(property: 'user', ref: '#/components/schemas/UserResource'),
+                            ],
+                            type: 'object'
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
+                    ]
+                )
+            ),
+        ]
+    )]
     public function me(Request $request): JsonResponse
     {
         return response()->json([
@@ -245,6 +335,33 @@ class AuthController extends Controller
         ]);
     }
 
+    #[OA\Post(
+        path: '/api/auth/logout',
+        tags: ['Auth'],
+        summary: 'Logout user',
+        description: 'Revokes the current access token',
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Logged out successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'خروج با موفقیت انجام شد.'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
+                    ]
+                )
+            ),
+        ]
+    )]
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
