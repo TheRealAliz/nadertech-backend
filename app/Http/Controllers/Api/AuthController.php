@@ -2,20 +2,24 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\Auth\VerifyForgotPasswordCodeRequest;
 use App\Models\User;
 use App\Services\LoginOtpService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\SendOTPRequest;
 use App\Http\Requests\Auth\LoginWithPasswordRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Http\Requests\Auth\VerifyOTPRequest;
 use App\Http\Resources\Auth\UserResource;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 use App\Models\PasswordResetCode;
+use App\Services\PasswordResetService;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -271,33 +275,37 @@ class AuthController extends Controller
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'Reset code sent if user exists',
+                description: 'Reset code sent',
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'message', type: 'string', example: 'اگر حسابی با این اطلاعات وجود داشته باشد، کد بازیابی ارسال می‌شود.'),
                         new OA\Property(property: 'expires_in', type: 'integer', example: 300),
-                        new OA\Property(property: 'dev_code', type: 'string', example: '123456', nullable: true),
+                        new OA\Property(
+                            property: 'dev_code',
+                            type: 'string',
+                            example: '123456',
+                            nullable: true,
+                            description: 'Only in local environment for testing'
+                        ),
                     ]
                 )
             ),
-            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                        new OA\Property(property: 'errors', type: 'object', example: ['login' => ['The login field is required.']])
+                    ]
+                )
+            ),
         ]
     )]
-    public function forgotPassword(Request $request): JsonResponse
+    public function forgotPassword(ForgotPasswordRequest $request, PasswordResetService $service): JsonResponse
     {
-        $validated = $request->validate([
-            'login' => ['required', 'string', 'max:255'],
-        ]);
+        $user = $this->findUserByLogin($request->login);
 
-        $login = $validated['login'];
-
-        $user = User::query()
-            ->where('email', $login)
-            ->orWhere('mobile', $login)
-            ->orWhere('username', $login)
-            ->first();
-
-        // برای جلوگیری از user enumeration همیشه پاسخ موفق برمی‌گردانیم.
         if (!$user) {
             return response()->json([
                 'message' => 'اگر حسابی با این اطلاعات وجود داشته باشد، کد بازیابی ارسال می‌شود.',
@@ -305,34 +313,13 @@ class AuthController extends Controller
             ]);
         }
 
-        PasswordResetCode::query()
-            ->where('user_id', $user->id)
-            ->whereNull('used_at')
-            ->delete();
-
-        $code = (string) random_int(100000, 999999);
-
-        PasswordResetCode::query()->create([
-            'user_id' => $user->id,
-            'code_hash' => Hash::make($code),
-            'expires_at' => now()->addMinutes(5),
-        ]);
-
-        /*
-         * اینجا باید کد واقعی را با SMS یا Email ارسال کنی.
-         * مثلا:
-         * SmsService::send($user->mobile, "کد بازیابی رمز عبور: {$code}");
-         * یا:
-         * Mail::to($user->email)->send(new ForgotPasswordCodeMail($code));
-         */
+        $service->create($user, $request->ip(), $request->userAgent());
 
         return response()->json([
             'message' => 'اگر حسابی با این اطلاعات وجود داشته باشد، کد بازیابی ارسال می‌شود.',
             'expires_in' => 300,
-            'dev_code' => app()->environment('local') ? $code : null,
         ]);
     }
-
 
     #[OA\Post(
         path: '/api/auth/verify-forgot-password-code',
@@ -353,7 +340,8 @@ class AuthController extends Controller
                     new OA\Property(
                         property: 'code',
                         type: 'string',
-                        example: '123456'
+                        example: '123456',
+                        description: '6-digit verification code'
                     ),
                 ]
             )
@@ -365,27 +353,37 @@ class AuthController extends Controller
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'message', type: 'string', example: 'کد تایید شد.'),
-                        new OA\Property(property: 'reset_token', type: 'string', example: 'eyJpdiI6IjEyMyJ9...'),
+                        new OA\Property(property: 'reset_token', type: 'string', example: 'aB3dE5fG7hI9jK1lMn2oP3qR4sT5uV6wX7yZ8'),
                         new OA\Property(property: 'expires_in', type: 'integer', example: 300),
                     ]
                 )
             ),
-            new OA\Response(response: 401, description: 'Invalid or expired code'),
-            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(
+                response: 401,
+                description: 'Invalid or expired code',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'کد وارد شده نامعتبر یا منقضی شده است.'),
+                        new OA\Property(property: 'error_key', type: 'string', example: 'invalid_code'),
+                        new OA\Property(property: 'remaining_attempts', type: 'integer', example: 3),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                        new OA\Property(property: 'errors', type: 'object', example: ['code' => ['The code must be 6 digits.']])
+                    ]
+                )
+            ),
         ]
     )]
-    public function verifyForgotPasswordCode(Request $request): JsonResponse
+    public function verifyForgotPasswordCode(VerifyForgotPasswordCodeRequest $request, PasswordResetService $service): JsonResponse
     {
-        $validated = $request->validate([
-            'login' => ['required', 'string', 'max:255'],
-            'code' => ['required', 'string', 'size:6'],
-        ]);
-
-        $user = User::query()
-            ->where('email', $validated['login'])
-            ->orWhere('mobile', $validated['login'])
-            ->orWhere('username', $validated['login'])
-            ->first();
+        $user = $this->findUserByLogin($request->login);
 
         if (!$user) {
             return response()->json([
@@ -393,29 +391,19 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $resetCode = PasswordResetCode::query()
-            ->where('user_id', $user->id)
-            ->whereNull('used_at')
-            ->where('expires_at', '>', now())
-            ->latest()
-            ->first();
+        $result = $service->verify($user, $request->code);
 
-        if (!$resetCode || !Hash::check($validated['code'], $resetCode->code_hash)) {
+        if (!$result->success) {
             return response()->json([
-                'message' => 'کد وارد شده نامعتبر یا منقضی شده است.',
+                'message' => $result->errorMessage,
+                'error_key' => $result->errorKey,
+                'remaining_attempts' => $result->remainingAttempts,
             ], 401);
         }
 
-        $plainResetToken = Str::random(80);
-
-        $resetCode->update([
-            'verified_at' => now(),
-            'reset_token_hash' => hash('sha256', $plainResetToken),
-        ]);
-
         return response()->json([
             'message' => 'کد تایید شد.',
-            'reset_token' => $plainResetToken,
+            'reset_token' => $result->resetToken,
             'expires_in' => 300,
         ]);
     }
@@ -440,7 +428,8 @@ class AuthController extends Controller
                     new OA\Property(
                         property: 'reset_token',
                         type: 'string',
-                        example: 'yFVEFhOUMq5Q24EKiwuyLj9lfiNsfW0UC49rp2b5nQ3ZwPUSKKoFbm9FrcWqOYr5'
+                        example: 'aB3dE5fG7hI9jK1lMn2oP3qR4sT5uV6wX7yZ8',
+                        description: 'Reset token received from verify endpoint'
                     ),
                     new OA\Property(
                         property: 'password',
@@ -467,23 +456,32 @@ class AuthController extends Controller
                     ]
                 )
             ),
-            new OA\Response(response: 401, description: 'Invalid or expired reset token'),
-            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(
+                response: 401,
+                description: 'Invalid or expired reset token',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'توکن بازیابی نامعتبر یا منقضی شده است.'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                        new OA\Property(property: 'errors', type: 'object', example: [
+                            'password' => ['The password confirmation does not match.'],
+                        ])
+                    ]
+                )
+            ),
         ]
     )]
-    public function resetPassword(Request $request): JsonResponse
+    public function resetPassword(ResetPasswordRequest $request, PasswordResetService $service): JsonResponse
     {
-        $validated = $request->validate([
-            'login' => ['required', 'string', 'max:255'],
-            'reset_token' => ['required', 'string', 'max:255'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
-
-        $user = User::query()
-            ->where('email', $validated['login'])
-            ->orWhere('mobile', $validated['login'])
-            ->orWhere('username', $validated['login'])
-            ->first();
+        $user = $this->findUserByLogin($request->login);
 
         if (!$user) {
             return response()->json([
@@ -491,39 +489,16 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $resetCode = PasswordResetCode::query()
-            ->where('user_id', $user->id)
-            ->whereNull('used_at')
-            ->whereNotNull('verified_at')
-            ->where('expires_at', '>', now())
-            ->latest()
-            ->first();
+        $result = $service->resetPassword($user, $request->reset_token, $request->password);
 
-        if (
-            !$resetCode ||
-            !$resetCode->reset_token_hash ||
-            !hash_equals($resetCode->reset_token_hash, hash('sha256', $validated['reset_token']))
-        ) {
+        if (!$result['success']) {
             return response()->json([
-                'message' => 'توکن بازیابی نامعتبر یا منقضی شده است.',
+                'message' => $result['message'],
             ], 401);
         }
 
-        $user->update([
-            'password' => $validated['password'],
-        ]);
-
-        $resetCode->update([
-            'used_at' => now(),
-        ]);
-
-        PasswordResetCode::query()
-            ->where('user_id', $user->id)
-            ->whereNull('used_at')
-            ->delete();
-
         return response()->json([
-            'message' => 'رمز عبور با موفقیت تغییر کرد.',
+            'message' => $result['message'],
         ]);
     }
 }
