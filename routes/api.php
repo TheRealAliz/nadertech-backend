@@ -25,6 +25,19 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+// ============================================= Profile ============================================
+
+use App\Http\Controllers\Api\ProfileController;
+
+Route::middleware('auth:sanctum')->prefix('profile')->group(function () {
+    Route::get('/', [ProfileController::class, 'show']);
+    Route::put('/', [ProfileController::class, 'update']);
+    Route::post('/avatar', [ProfileController::class, 'updateAvatar']);
+    Route::delete('/avatar', [ProfileController::class, 'deleteAvatar']);
+
+    Route::put('/change-password', [ProfileController::class, 'changePassword']);
+});
+
 // ============================================ Lotteries ===========================================
 
 Route::get('/lotteries', [LotteryController::class, 'index']);
