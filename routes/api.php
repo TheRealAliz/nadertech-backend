@@ -4,36 +4,28 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\LotteryController;
 
-Route::middleware('guest')->group(function () {
-    Route::post('/auth/login', [AuthController::class, 'login'])
-        ->middleware('throttle:5,1');
+// ========================================== Authenticate ==========================================
 
-    Route::post('/auth/verify-login-otp', [AuthController::class, 'verifyLoginOtp'])
-        ->middleware('throttle:10,1');
+Route::prefix('auth')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
 
-    Route::post('/auth/resend-login-otp', [AuthController::class, 'resendLoginOtp'])
-        ->middleware('throttle:3,1');
+    Route::post('/login', [AuthController::class, 'loginWithPassword']);
 
-    Route::post('/auth/register', [AuthController::class, 'register'])
-        ->middleware('throttle:3,1');
+    Route::post('/send-otp', [AuthController::class, 'sendOTP']);
+    Route::post('/verify-otp', [AuthController::class, 'verifyOTP']);
 
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/verify-forgot-password-code', [AuthController::class, 'verifyForgotPasswordCode']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
-    Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
-    Route::post('/auth/verify-forgot-password-code', [AuthController::class, 'verifyForgotPasswordCode']);
-    Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/me', [AuthController::class, 'me']);
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::post('/resend-otp', [AuthController::class, 'resendLoginOtp']);
+    });
 });
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/auth/me', [AuthController::class, 'me']);
-    Route::post('/auth/logout', [AuthController::class, 'logout']);
-});
-
-
-
-
-
-
-
+// ============================================ Lotteries ===========================================
 
 Route::get('/lotteries', [LotteryController::class, 'index']);
 Route::get('/lotteries/{lottery}', [LotteryController::class, 'show']);
