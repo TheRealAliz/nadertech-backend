@@ -3,31 +3,30 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\LotteryController;
+use App\Http\Controllers\Api\ProfileController;
 
 // ========================================== Authenticate ==========================================
 
 Route::prefix('auth')->group(function () {
-    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:3,1');
 
-    Route::post('/login', [AuthController::class, 'loginWithPassword']);
+    Route::post('/login', [AuthController::class, 'loginWithPassword'])->middleware('throttle:5,1');
 
-    Route::post('/send-otp', [AuthController::class, 'sendOTP']);
-    Route::post('/verify-otp', [AuthController::class, 'verifyOTP']);
+    Route::post('/send-otp', [AuthController::class, 'sendOTP'])->middleware('throttle:3,1');
+    Route::post('/resend-otp', [AuthController::class, 'resendOtp'])->middleware('throttle:2,1');
+    Route::post('/verify-otp', [AuthController::class, 'verifyOTP'])->middleware('throttle:10,1');
 
-    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
-    Route::post('/verify-forgot-password-code', [AuthController::class, 'verifyForgotPasswordCode']);
-    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:3,1');
+    Route::post('/verify-forgot-password-code', [AuthController::class, 'verifyForgotPasswordCode'])->middleware('throttle:5,1');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:3,1');
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
-        Route::post('/resend-otp', [AuthController::class, 'resendLoginOtp']);
     });
 });
 
 // ============================================= Profile ============================================
-
-use App\Http\Controllers\Api\ProfileController;
 
 Route::middleware('auth:sanctum')->prefix('profile')->group(function () {
     Route::get('/', [ProfileController::class, 'show']);

@@ -118,15 +118,198 @@ class AuthController extends Controller
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: 'OTP sent'),
-            new OA\Response(response: 404, description: 'User not found'),
+            new OA\Response(
+                response: 200,
+                description: 'OTP sent or already exists - Two possible messages: 
+        1. "کد تأیید برای شماره موبایل ارسال شد." (new OTP sent)
+        2. "کد تأیید قبلاً برای این شماره ارسال شده است." (OTP already exists and still valid)',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'message',
+                            type: 'string',
+                            description: 'Persian message indicating OTP status',
+                            example: 'کد تأیید برای شماره موبایل ارسال شد.'
+                        ),
+                        new OA\Property(
+                            property: 'data',
+                            properties: [
+                                new OA\Property(
+                                    property: 'login_token',
+                                    type: 'string',
+                                    description: 'Encrypted user ID for OTP verification',
+                                    example: 'eyJpdiI6...'
+                                ),
+                                new OA\Property(
+                                    property: 'expires_in',
+                                    type: 'integer',
+                                    description: 'OTP expiration time in seconds',
+                                    example: 180
+                                ),
+                            ],
+                            type: 'object'
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'User not found',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'کاربر یافت نشد.'),
+                        new OA\Property(property: 'error_key', type: 'string', example: 'user_not_found'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                        new OA\Property(property: 'errors', type: 'object', example: [
+                            'mobile' => ['شماره موبایل باید ۱۱ رقم باشد.']
+                        ])
+                    ]
+                )
+            ),
         ]
     )]
     public function sendOTP(SendOTPRequest $request, LoginOtpService $otpService): JsonResponse
     {
         $user = $this->findUserByLogin($request->mobile);
 
-        $otp = $otpService->create($user, $request->ip(), $request->userAgent());
+        $result = $otpService->create($user, $request->ip(), $request->userAgent());
+
+        $message = $result['already_sent']
+            ? 'کد تأیید قبلاً برای این شماره ارسال شده است.'
+            : 'کد تأیید برای شماره موبایل ارسال شد.';
+
+        return response()->json([
+            'message' => $message,
+            'data' => [
+                'login_token' => encrypt($user->id),
+                'expires_in' => $result['otp']->getExpiresIn(),
+            ],
+        ]);
+    }
+
+    #[OA\Post(
+        path: '/api/auth/resend-otp',
+        tags: ['Auth'],
+        summary: 'Resend OTP code',
+        description: 'Resends a new OTP code to user mobile. 
+        **Note:** This endpoint only works when there is no active (non-expired) OTP code. 
+        If an active OTP code exists, the request will be rejected with error 429.',
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['login_token'],
+                properties: [
+                    new OA\Property(
+                        property: 'login_token',
+                        type: 'string',
+                        example: 'eyJpdiI6Ik5UWTJZ...',
+                        description: 'Encrypted user ID received from register or send-otp endpoint'
+                    ),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'New OTP sent successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'کد تأیید جدید با موفقیت ارسال شد.'),
+                        new OA\Property(
+                            property: 'data',
+                            properties: [
+                                new OA\Property(property: 'login_token', type: 'string', example: 'eyJpdiI6Ik5UWTJZ...'),
+                                new OA\Property(property: 'expires_in', type: 'integer', example: 180, description: 'New OTP expiration time in seconds'),
+                            ],
+                            type: 'object'
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Invalid token format',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'توکن ورودی معتبر نیست.'),
+                        new OA\Property(property: 'error_key', type: 'string', example: 'invalid_token'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'User not found',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'کاربر یافت نشد.'),
+                        new OA\Property(property: 'error_key', type: 'string', example: 'user_not_found'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                        new OA\Property(
+                            property: 'errors',
+                            type: 'object',
+                            example: [
+                                'login_token' => ['The login token field is required.']
+                            ]
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 429,
+                description: 'Active OTP code exists - Cannot resend',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'کد تأیید فعال وجود دارد. لطفاً منتظر بمانید تا منقضی شود.'),
+                        new OA\Property(property: 'error_key', type: 'string', example: 'active_otp_exists'),
+                    ]
+                )
+            ),
+        ]
+    )]
+    public function resendOtp(ResendOTPRequest $request, LoginOtpService $otpService): JsonResponse
+    {
+        try {
+            $userId = decrypt($request->login_token);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'توکن ورودی معتبر نیست.',
+                'error_key' => 'invalid_token',
+            ], 400);
+        }
+
+        $user = User::find($userId);
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'کاربر یافت نشد.',
+                'error_key' => 'user_not_found',
+            ], 404);
+        }
+
+        try {
+            $result = $otpService->resend($user, $request->ip(), $request->userAgent());
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'error_key' => 'active_otp_exists',
+            ], 429);
+        }
 
         return response()->json([
             'message' => 'کد تأیید برای شماره موبایل ارسال شد.',

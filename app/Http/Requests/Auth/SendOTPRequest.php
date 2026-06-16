@@ -22,11 +22,4 @@ class SendOTPRequest extends FormRequest
             'mobile.exists' => 'کاربری با این شماره موبایل یافت نشد.',
         ];
     }
-
-    public function attributes(): array
-    {
-        return [
-            'mobile' => 'شماره موبایل',
-        ];
-    }
 }

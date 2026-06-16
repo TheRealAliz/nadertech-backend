@@ -33,4 +33,9 @@ class LoginOtp extends Model
     {
         return (new Carbon($this->expires_at))->getTimestampMs();
     }
+
+    public function getExpiresIn(): int
+    {
+        return now()->diffInSeconds($this->expires_at);
+    }
 }
