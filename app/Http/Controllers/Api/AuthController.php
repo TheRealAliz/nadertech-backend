@@ -12,6 +12,7 @@ use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\SendOTPRequest;
 use App\Http\Requests\Auth\LoginWithPasswordRequest;
+use App\Http\Requests\Auth\ResendOTPRequest;
 use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Http\Requests\Auth\VerifyOTPRequest;
 use App\Http\Resources\Auth\UserResource;
@@ -107,7 +108,7 @@ class AuthController extends Controller
         path: '/api/auth/send-otp',
         tags: ['Auth'],
         summary: 'Request OTP for login',
-        description: 'Step 1: Send OTP to user mobile',
+        description: 'Step 1: Send OTP to user mobile. If OTP already sent and active, returns existing one.',
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
@@ -312,10 +313,10 @@ class AuthController extends Controller
         }
 
         return response()->json([
-            'message' => 'کد تأیید برای شماره موبایل ارسال شد.',
+            'message' => 'کد تأیید جدید برای شماره موبایل ارسال شد.',
             'data' => [
                 'login_token' => encrypt($user->id),
-                'expires_in' => $otp->getExpiresAtTimestampMs(),
+                'expires_in' => $result['otp']->getExpiresIn(),
             ],
         ]);
     }
@@ -398,8 +399,8 @@ class AuthController extends Controller
     #[OA\Post(
         path: '/api/auth/register',
         tags: ['Auth'],
-        summary: 'Register a new user',
-        description: 'Creates a new user account and returns access token',
+        summary: 'Register a new user and send OTP',
+        description: 'Creates a new user account, sends OTP to mobile, and returns login_token for verification',
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
@@ -417,16 +418,16 @@ class AuthController extends Controller
         responses: [
             new OA\Response(
                 response: 201,
-                description: 'User registered successfully',
+                description: 'User registered successfully, OTP sent',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'message', type: 'string', example: 'ثبت‌نام با موفقیت انجام شد.'),
+                        new OA\Property(property: 'message', type: 'string', example: 'ثبت‌نام با موفقیت انجام شد. کد تأیید به موبایل شما ارسال شد.'),
                         new OA\Property(
                             property: 'data',
                             properties: [
+                                new OA\Property(property: 'login_token', type: 'string', example: 'eyJpdiI6Ik5UWT...', description: 'Encrypted user ID, required for OTP verification'),
+                                new OA\Property(property: 'expires_in', type: 'integer', example: 300, description: 'OTP expiration time in seconds'),
                                 new OA\Property(property: 'user', ref: '#/components/schemas/UserResource'),
-                                new OA\Property(property: 'access_token', type: 'string', example: '1|abc123def456...'),
-                                new OA\Property(property: 'token_type', type: 'string', example: 'Bearer'),
                             ],
                             type: 'object'
                         )
@@ -452,7 +453,7 @@ class AuthController extends Controller
             ),
         ]
     )]
-    public function register(RegisterRequest $request): JsonResponse
+    public function register(RegisterRequest $request, LoginOtpService $otpService): JsonResponse
     {
         $validated = $request->validated();
 
@@ -462,16 +463,17 @@ class AuthController extends Controller
             'email' => $validated['email'],
             'mobile' => $validated['mobile'],
             'password' => Hash::make($validated['password']),
+            'mobile_verified_at' => null,
         ]);
 
-        $token = $user->createToken('api_token')->plainTextToken;
+        $otp = $otpService->create($user, $request->ip(), $request->userAgent())['otp'];
 
         return response()->json([
-            'message' => 'ثبت‌نام با موفقیت انجام شد.',
+            'message' => 'ثبت‌نام با موفقیت انجام شد. کد تأیید به شماره موبایل ارسال شد.',
             'data' => [
+                'login_token' => encrypt($user->id),
+                'expires_in' => $otp->getExpiresIn(),
                 'user' => new UserResource($user),
-                'access_token' => $token,
-                'token_type' => 'Bearer',
             ],
         ], 201);
     }
@@ -580,13 +582,6 @@ class AuthController extends Controller
                     properties: [
                         new OA\Property(property: 'message', type: 'string', example: 'اگر حسابی با این اطلاعات وجود داشته باشد، کد بازیابی ارسال می‌شود.'),
                         new OA\Property(property: 'expires_in', type: 'integer', example: 300),
-                        new OA\Property(
-                            property: 'dev_code',
-                            type: 'string',
-                            example: '123456',
-                            nullable: true,
-                            description: 'Only in local environment for testing'
-                        ),
                     ]
                 )
             ),
@@ -613,11 +608,11 @@ class AuthController extends Controller
             ]);
         }
 
-        $service->create($user, $request->ip(), $request->userAgent());
+        $resetCode = $service->create($user, $request->ip(), $request->userAgent());
 
         return response()->json([
             'message' => 'اگر حسابی با این اطلاعات وجود داشته باشد، کد بازیابی ارسال می‌شود.',
-            'expires_in' => 300,
+            'expires_in' => $resetCode->getExpiresIn(),
         ]);
     }
 
