@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ProjectServiceController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\LotteryController;
@@ -35,6 +36,14 @@ Route::middleware('auth:sanctum')->prefix('profile')->group(function () {
     Route::delete('/avatar', [ProfileController::class, 'deleteAvatar']);
 
     Route::put('/change-password', [ProfileController::class, 'changePassword']);
+});
+
+// ======================================== Project Services ========================================
+
+Route::prefix('services')->group(function () {
+    Route::get('/', [ProjectServiceController::class, 'index']);
+    Route::get('/tree', [ProjectServiceController::class, 'tree']);
+    Route::get('/{service:slug}', [ProjectServiceController::class, 'show']);
 });
 
 // ============================================ Lotteries ===========================================
