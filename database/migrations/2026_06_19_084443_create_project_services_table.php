@@ -11,7 +11,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('parent_id')
                 ->nullable()
-                ->constrained('services')
+                ->constrained('project_services')
                 ->nullOnDelete();
             $table->string('title', 150);
             $table->string('slug')->unique();
