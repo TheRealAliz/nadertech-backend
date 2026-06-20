@@ -39,6 +39,18 @@ use OpenApi\Attributes as OA;
     ],
     type: "object"
 )]
+#[OA\Schema(
+    schema: "PageItemResource",
+    title: "Page Item Resource",
+    description: "Page item resource representation",
+    properties: [
+        new OA\Property(property: "key", type: "string", example: "title", description: "Item key identifier"),
+        new OA\Property(property: "value", type: "string", example: "نادر تکنولوژی فقط یک نام نیست؛ یک نگاه است.", description: "Item content value"),
+        new OA\Property(property: "type", type: "string", enum: ["text", "html", "image_path", "json", "number", "boolean"], example: "text", description: "Content type"),
+        new OA\Property(property: "page", type: "string", example: "about", description: "Page name"),
+    ],
+    type: "object"
+)]
 class OpenApiSpec
 {
 }

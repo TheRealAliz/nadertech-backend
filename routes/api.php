@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ProjectServiceController;
+use App\Http\Controllers\Api\PageItemController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\LotteryController;
@@ -70,4 +71,11 @@ Route::prefix('admin')->middleware('api.token')->group(function () {
     Route::get('/lotteries/{lottery}/entries', [LotteryController::class, 'entries']);
     Route::post('/lotteries/{lottery}/draw', [LotteryController::class, 'draw']);
     Route::get('/lotteries/{lottery}/winners', [LotteryController::class, 'winners']);
+});
+
+// ============================================ Page Items ============================================
+
+Route::prefix('page')->group(function () {
+    Route::get('/{page}', [PageItemController::class, 'index']);
+    Route::get('/{page}/{key}', [PageItemController::class, 'show']);
 });
