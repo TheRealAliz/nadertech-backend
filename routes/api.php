@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\ProjectServiceController;
 use App\Http\Controllers\Api\PageItemController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\FaqController;
 use App\Http\Controllers\Api\LotteryController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ProjectRequestController;
@@ -78,4 +79,11 @@ Route::prefix('admin')->middleware('api.token')->group(function () {
 Route::prefix('page')->group(function () {
     Route::get('/{page}', [PageItemController::class, 'index']);
     Route::get('/{page}/{key}', [PageItemController::class, 'show']);
+});
+
+// =============================================== FAQs ===============================================
+
+Route::prefix('faqs')->group(function () {
+    Route::get('/', [FaqController::class, 'index']);
+    Route::get('/{faq}', [FaqController::class, 'show']);
 });
