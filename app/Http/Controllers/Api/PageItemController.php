@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Page\PageItemResource;
 use App\Models\PageItem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,15 +31,21 @@ class PageItemController extends Controller
                 response: 200,
                 description: 'Successful operation',
                 content: new OA\JsonContent(
-                    type: 'array',
-                    items: new OA\Items(
-                        properties: [
-                            new OA\Property(property: 'key', type: 'string', example: 'title', description: 'Item key identifier'),
-                            new OA\Property(property: 'value', type: 'string', example: 'نادر تکنولوژی فقط یک نام نیست؛ یک نگاه است.', description: 'Item content value'),
-                            new OA\Property(property: 'type', type: 'string', enum: ['text', 'html', 'image_path', 'json', 'number', 'boolean'], example: 'text', description: 'Content type'),
-                            new OA\Property(property: 'page', type: 'string', example: 'about', description: 'Page name')
-                        ]
-                    )
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'array',
+                            items: new OA\Items(
+                                properties: [
+                                    new OA\Property(property: 'key', type: 'string', example: 'title', description: 'Item key identifier'),
+                                    new OA\Property(property: 'value', type: 'string', example: 'نادر تکنولوژی فقط یک نام نیست؛ یک نگاه است.', description: 'Item content value'),
+                                    new OA\Property(property: 'type', type: 'string', enum: ['text', 'html', 'image_path', 'json', 'number', 'boolean'], example: 'text', description: 'Content type'),
+                                    new OA\Property(property: 'page', type: 'string', example: 'about', description: 'Page name')
+                                ],
+                                type: 'object'
+                            )
+                        )
+                    ]
                 )
             ),
             new OA\Response(
@@ -64,7 +71,11 @@ class PageItemController extends Controller
             ->where('page', '=', $page)
             ->get(['key', 'value', 'type', 'page']);
 
-        return response()->json($items);
+        return response()->json(
+            [
+                'data' => $items->map(fn($item) => new PageItemResource($item))
+            ]
+        );
     }
 
     #[OA\Get(
@@ -96,10 +107,22 @@ class PageItemController extends Controller
                 description: 'Successful operation',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'key', type: 'string', example: 'title', description: 'Item key identifier'),
-                        new OA\Property(property: 'value', type: 'string', example: 'نادر تکنولوژی فقط یک نام نیست؛ یک نگاه است.', description: 'Item content value'),
-                        new OA\Property(property: 'type', type: 'string', enum: ['text', 'html', 'image_path', 'json', 'number', 'boolean'], example: 'text', description: 'Content type'),
-                        new OA\Property(property: 'page', type: 'string', example: 'about', description: 'Page name')
+                        new OA\Property(
+                            property: 'data',
+                            properties: [
+                                new OA\Property(
+                                    property: 'page_item',
+                                    properties: [
+                                        new OA\Property(property: 'key', type: 'string', example: 'title', description: 'Item key identifier'),
+                                        new OA\Property(property: 'value', type: 'string', example: 'نادر تکنولوژی فقط یک نام نیست؛ یک نگاه است.', description: 'Item content value'),
+                                        new OA\Property(property: 'type', type: 'string', enum: ['text', 'html', 'image_path', 'json', 'number', 'boolean'], example: 'text', description: 'Content type'),
+                                        new OA\Property(property: 'page', type: 'string', example: 'about', description: 'Page name')
+                                    ],
+                                    type: 'object'
+                                )
+                            ],
+                            type: 'object'
+                        )
                     ]
                 )
             ),
@@ -142,7 +165,13 @@ class PageItemController extends Controller
             ], 404);
         }
 
-        return response()->json($item);
+        return response()->json(
+            [
+                'data' => [
+                    'page_item' => new PageItemResource($item)
+                ]
+            ]
+        );
     }
 
     public function updateSingle(Request $request, string $page, string $key)
