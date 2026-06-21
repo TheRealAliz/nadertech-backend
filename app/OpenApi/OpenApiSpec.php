@@ -51,6 +51,26 @@ use OpenApi\Attributes as OA;
     ],
     type: "object"
 )]
+#[OA\Schema(
+    schema: "ProjectServiceResource",
+    title: "Project Service Resource",
+    description: "Project service resource representation with nested children",
+    properties: [
+        new OA\Property(property: "id", type: "integer", example: 1),
+        new OA\Property(property: "title", type: "string", example: "طراحی وب‌سایت"),
+        new OA\Property(property: "slug", type: "string", example: "web-design"),
+        new OA\Property(property: "description", type: "string", example: "طراحی و توسعه وب‌سایت‌های حرفه ای", nullable: true),
+        new OA\Property(property: "sort_order", type: "integer", example: 1),
+        new OA\Property(property: "is_active", type: "boolean", example: true),
+        new OA\Property(
+            property: "children",
+            type: "array",
+            description: "Nested child services",
+            items: new OA\Items(ref: "#/components/schemas/ProjectServiceResource")
+        ),
+    ],
+    type: "object"
+)]
 class OpenApiSpec
 {
 }
