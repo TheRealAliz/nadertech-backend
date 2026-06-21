@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ProjectRequests\ProjectServiceResource;
 use App\Models\ProjectService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use OpenApi\Attributes as OA;
 
 class ProjectServiceController extends Controller
@@ -32,7 +31,7 @@ class ProjectServiceController extends Controller
                                         properties: [
                                             new OA\Property(property: 'id', type: 'integer', example: 1),
                                             new OA\Property(property: 'parent_id', type: 'integer', nullable: true, example: null),
-                                            new OA\Property(property: 'name', type: 'string', example: 'طراحی وبسایت'),
+                                            new OA\Property(property: 'title', type: 'string', example: 'طراحی وبسایت'),
                                             new OA\Property(property: 'slug', type: 'string', example: 'web-design'),
                                             new OA\Property(property: 'description', type: 'string', nullable: true, example: 'طراحی وبسایت های شرکتی، فروشگاهی و شخصی'),
                                             new OA\Property(property: 'sort_order', type: 'integer', example: 1),
@@ -105,7 +104,7 @@ class ProjectServiceController extends Controller
                                     properties: [
                                         new OA\Property(property: 'id', type: 'integer', example: 1),
                                         new OA\Property(property: 'parent_id', type: 'integer', nullable: true, example: null),
-                                        new OA\Property(property: 'name', type: 'string', example: 'طراحی وبسایت'),
+                                        new OA\Property(property: 'title', type: 'string', example: 'طراحی وبسایت'),
                                         new OA\Property(property: 'slug', type: 'string', example: 'web-design'),
                                         new OA\Property(property: 'description', type: 'string', nullable: true, example: 'طراحی وبسایت های شرکتی، فروشگاهی و شخصی'),
                                         new OA\Property(property: 'sort_order', type: 'integer', example: 1),
@@ -117,7 +116,7 @@ class ProjectServiceController extends Controller
                                                 properties: [
                                                     new OA\Property(property: 'id', type: 'integer', example: 2),
                                                     new OA\Property(property: 'parent_id', type: 'integer', example: 1),
-                                                    new OA\Property(property: 'name', type: 'string', example: 'طراحی فروشگاهی'),
+                                                    new OA\Property(property: 'title', type: 'string', example: 'طراحی فروشگاهی'),
                                                     new OA\Property(property: 'slug', type: 'string', example: 'ecommerce-design'),
                                                     new OA\Property(property: 'description', type: 'string', nullable: true, example: 'طراحی وبسایت فروشگاهی با ووکامرس'),
                                                     new OA\Property(property: 'sort_order', type: 'integer', example: 1),
@@ -198,7 +197,7 @@ class ProjectServiceController extends Controller
                                         properties: [
                                             new OA\Property(property: 'id', type: 'integer', example: 1),
                                             new OA\Property(property: 'parent_id', type: 'integer', nullable: true, example: null),
-                                            new OA\Property(property: 'name', type: 'string', example: 'طراحی وبسایت'),
+                                            new OA\Property(property: 'title', type: 'string', example: 'طراحی وبسایت'),
                                             new OA\Property(property: 'slug', type: 'string', example: 'web-design'),
                                             new OA\Property(property: 'description', type: 'string', nullable: true, example: 'طراحی وبسایت های شرکتی، فروشگاهی و شخصی'),
                                             new OA\Property(property: 'sort_order', type: 'integer', example: 1),
@@ -210,7 +209,7 @@ class ProjectServiceController extends Controller
                                                     properties: [
                                                         new OA\Property(property: 'id', type: 'integer', example: 2),
                                                         new OA\Property(property: 'parent_id', type: 'integer', example: 1),
-                                                        new OA\Property(property: 'name', type: 'string', example: 'طراحی فروشگاهی'),
+                                                        new OA\Property(property: 'title', type: 'string', example: 'طراحی فروشگاهی'),
                                                         new OA\Property(property: 'slug', type: 'string', example: 'ecommerce-design'),
                                                         new OA\Property(property: 'description', type: 'string', nullable: true, example: 'طراحی وبسایت فروشگاهی با ووکامرس'),
                                                         new OA\Property(property: 'sort_order', type: 'integer', example: 1),
