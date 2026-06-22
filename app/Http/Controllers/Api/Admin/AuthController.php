@@ -14,7 +14,7 @@ use OpenApi\Attributes as OA;
 class AuthController extends Controller
 {
     #[OA\Post(
-        path: '/api/admin/login',
+        path: '/api/admin/Auth/login',
         tags: ['Admin - Auth'],
         summary: 'Admin login',
         description: 'Login admin panel using username and password. Returns access token for admin API access.',
