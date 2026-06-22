@@ -71,6 +71,23 @@ use OpenApi\Attributes as OA;
     ],
     type: "object"
 )]
+#[OA\Schema(
+    schema: 'BannerResource',
+    title: 'Banner Resource',
+    description: 'Banner resource representation',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'title', type: 'string', nullable: true, example: 'بنر اصلی'),
+        new OA\Property(property: 'image', type: 'string', example: 'http://localhost/storage/banners/banner-1.jpg'),
+        new OA\Property(property: 'alt', type: 'string', nullable: true, example: 'توضیح تصویر'),
+        new OA\Property(property: 'link', type: 'string', nullable: true, example: 'https://example.com'),
+        new OA\Property(property: 'sort_order', type: 'integer', example: 1),
+        new OA\Property(property: 'is_active', type: 'boolean', example: true),
+        new OA\Property(property: 'created_at', type: 'string', format: 'datetime', example: '2026-06-20T10:30:00.000000Z'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'datetime', example: '2026-06-20T10:30:00.000000Z'),
+    ],
+    type: 'object'
+)]
 class OpenApiSpec
 {
 }

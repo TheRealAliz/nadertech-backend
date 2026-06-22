@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Api\Admin\BannerController;
 use App\Http\Controllers\Api\ProjectServiceController;
 use App\Http\Controllers\Api\PageItemController;
 use Illuminate\Support\Facades\Route;
@@ -104,4 +105,13 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
 
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/users/{user}', [UserController::class, 'show']);
+
+    // ==================================== Home Page Banners ===================================
+
+    Route::prefix('banners')->group(function () {
+        Route::apiResource('/', BannerController::class);
+        Route::put('/{banner}/status', [BannerController::class, 'updateStatus']);
+        Route::put('/{banner}/image', [BannerController::class, 'updateImage']);
+        Route::put('/reorder', [BannerController::class, 'reorder']);
+    });
 });
