@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Api\ProjectServiceController;
 use App\Http\Controllers\Api\PageItemController;
 use Illuminate\Support\Facades\Route;
@@ -8,6 +9,7 @@ use App\Http\Controllers\Api\FaqController;
 use App\Http\Controllers\Api\LotteryController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ProjectRequestController;
+use App\Http\Controllers\Api\Admin\UserController;
 
 // ========================================== Authenticate ==========================================
 
@@ -86,4 +88,20 @@ Route::prefix('page')->group(function () {
 Route::prefix('faqs')->group(function () {
     Route::get('/', [FaqController::class, 'index']);
     Route::get('/{faq}', [FaqController::class, 'show']);
+});
+
+// ============================================ Admin ===========================================
+
+Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+
+    // ====================================== Authenticate ======================================
+
+    Route::withoutMiddleware('admin')->prefix('/auth')->group(function () {
+        Route::post('/login', [AdminAuthController::class, 'login']);
+    });
+
+    // ========================================== Users =========================================
+
+    Route::get('/users', [UserController::class, 'index']);
+    Route::get('/users/{user}', [UserController::class, 'show']);
 });
