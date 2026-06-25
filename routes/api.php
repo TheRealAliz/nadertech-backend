@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\ArticleController;
 use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Api\Admin\BannerController;
 use App\Http\Controllers\Api\ProjectServiceController;
@@ -91,29 +92,38 @@ Route::prefix('faqs')->group(function () {
     Route::get('/{faq}', [FaqController::class, 'show']);
 });
 
-// ============================================ Admin ===========================================
+// ============================================== Admin ===============================================
 
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
 
-    // ====================================== Authenticate ======================================
+    // ========================================= Authenticate =========================================
 
     Route::withoutMiddleware('admin')->prefix('/auth')->group(function () {
         Route::post('/login', [AdminAuthController::class, 'login']);
     });
 
-    // ========================================== Users =========================================
+    // ============================================= Users ============================================
 
     Route::prefix('users')->group(function () {
         Route::get('/', [UserController::class, 'index']);
         Route::get('/{user}', [UserController::class, 'show']);
     });
 
-    // ==================================== Home Page Banners ===================================
+    // ======================================= Home Page Banners ======================================
 
     Route::prefix('banners')->group(function () {
         Route::apiResource('/', BannerController::class);
         Route::put('/{banner}/status', [BannerController::class, 'updateStatus']);
         Route::put('/{banner}/image', [BannerController::class, 'updateImage']);
         Route::put('/reorder', [BannerController::class, 'reorder']);
+    });
+
+    // =========================================== Articles ===========================================
+
+    Route::prefix('articles')->group(function () {
+        Route::apiResource('/', ArticleController::class);
+        Route::get('/archived', [ArticleController::class, 'archived']);
+        Route::put('/{article}/status', [ArticleController::class, 'updateStatus']);
+        Route::put('/{article}/thumbnail', [ArticleController::class, 'updateThumbnail']);
     });
 });
