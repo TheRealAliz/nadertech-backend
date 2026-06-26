@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\Api\Admin\ArticleController as AdminArticleController;
 use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
-use App\Http\Controllers\Api\Admin\BannerController;
+use App\Http\Controllers\Api\Admin\BannerController as AdminBannerController;
 use App\Http\Controllers\Api\ProjectServiceController;
 use App\Http\Controllers\Api\PageItemController;
 use Illuminate\Support\Facades\Route;
@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ProjectRequestController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\ArticleController;
+use App\Http\Controllers\Api\BannerController;
 
 // ========================================== Authenticate ==========================================
 
@@ -79,6 +80,12 @@ Route::prefix('admin')->middleware('api.token')->group(function () {
     Route::get('/lotteries/{lottery}/winners', [LotteryController::class, 'winners']);
 });
 
+// ======================================== Home Page Banners =========================================
+
+Route::prefix('banners')->group(function () {
+    Route::get('/', [BannerController::class, 'index']);
+});
+
 // ============================================= Articles =============================================
 
 Route::prefix('articles')->group(function () {
@@ -119,10 +126,10 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     // ======================================= Home Page Banners ======================================
 
     Route::prefix('banners')->group(function () {
-        Route::apiResource('/', BannerController::class);
-        Route::put('/{banner}/status', [BannerController::class, 'updateStatus']);
-        Route::put('/{banner}/image', [BannerController::class, 'updateImage']);
-        Route::put('/reorder', [BannerController::class, 'reorder']);
+        Route::apiResource('/', AdminBannerController::class);
+        Route::put('/{banner}/status', [AdminBannerController::class, 'updateStatus']);
+        Route::put('/{banner}/image', [AdminBannerController::class, 'updateImage']);
+        Route::put('/reorder', [AdminBannerController::class, 'reorder']);
     });
 
     // =========================================== Articles ===========================================

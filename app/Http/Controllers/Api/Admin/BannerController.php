@@ -199,7 +199,7 @@ class BannerController extends Controller
                         ),
                         new OA\Property(
                             property: 'data',
-                            ref: '#/components/schemas/BannerResource'
+                            ref: '#/components/schemas/AdminBannerResource'
                         )
                     ]
                 )
@@ -284,7 +284,7 @@ class BannerController extends Controller
                     properties: [
                         new OA\Property(
                             property: 'data',
-                            ref: '#/components/schemas/BannerResource'
+                            ref: '#/components/schemas/AdminBannerResource'
                         )
                     ]
                 )
@@ -410,7 +410,7 @@ class BannerController extends Controller
                         ),
                         new OA\Property(
                             property: 'data',
-                            ref: '#/components/schemas/BannerResource'
+                            ref: '#/components/schemas/AdminBannerResource'
                         )
                     ]
                 )
@@ -532,7 +532,7 @@ class BannerController extends Controller
                         ),
                         new OA\Property(
                             property: 'data',
-                            ref: '#/components/schemas/BannerResource'
+                            ref: '#/components/schemas/AdminBannerResource'
                         )
                     ]
                 )
@@ -648,7 +648,7 @@ class BannerController extends Controller
                         ),
                         new OA\Property(
                             property: 'data',
-                            ref: '#/components/schemas/BannerResource'
+                            ref: '#/components/schemas/AdminBannerResource'
                         )
                     ]
                 )
@@ -760,7 +760,7 @@ class BannerController extends Controller
                             property: 'data',
                             type: 'array',
                             items: new OA\Items(
-                                ref: '#/components/schemas/BannerResource'
+                                ref: '#/components/schemas/AdminBannerResource'
                             )
                         )
                     ]
