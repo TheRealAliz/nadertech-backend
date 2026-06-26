@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Api\Admin\ArticleController;
+use App\Http\Controllers\Api\Admin\ArticleController as AdminArticleController;
 use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Api\Admin\BannerController;
 use App\Http\Controllers\Api\ProjectServiceController;
@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\LotteryController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ProjectRequestController;
 use App\Http\Controllers\Api\Admin\UserController;
+use App\Http\Controllers\Api\ArticleController;
 
 // ========================================== Authenticate ==========================================
 
@@ -78,6 +79,12 @@ Route::prefix('admin')->middleware('api.token')->group(function () {
     Route::get('/lotteries/{lottery}/winners', [LotteryController::class, 'winners']);
 });
 
+// ============================================= Articles =============================================
+
+Route::prefix('articles')->group(function () {
+    Route::get('/', [ArticleController::class, 'index']);
+});
+
 // ============================================ Page Items ============================================
 
 Route::prefix('page')->group(function () {
@@ -121,9 +128,9 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     // =========================================== Articles ===========================================
 
     Route::prefix('articles')->group(function () {
-        Route::apiResource('/', ArticleController::class);
-        Route::get('/archived', [ArticleController::class, 'archived']);
-        Route::put('/{article}/status', [ArticleController::class, 'updateStatus']);
-        Route::put('/{article}/thumbnail', [ArticleController::class, 'updateThumbnail']);
+        Route::apiResource('/', AdminArticleController::class);
+        Route::get('/archived', [AdminArticleController::class, 'archived']);
+        Route::put('/{article}/status', [AdminArticleController::class, 'updateStatus']);
+        Route::put('/{article}/thumbnail', [AdminArticleController::class, 'updateThumbnail']);
     });
 });

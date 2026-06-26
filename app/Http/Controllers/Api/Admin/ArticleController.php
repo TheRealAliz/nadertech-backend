@@ -57,7 +57,7 @@ class ArticleController extends Controller
                         new OA\Property(property: 'message', type: 'string', example: 'Article created successfully'),
                         new OA\Property(
                             property: 'data',
-                            ref: '#/components/schemas/ArticleResource'
+                            ref: '#/components/schemas/AdminArticleResource'
                         )
                     ]
                 )
@@ -82,6 +82,8 @@ class ArticleController extends Controller
         );
 
         $article = Article::create($data);
+
+        $article->load('admin');
 
         return response()->json([
             'message' => 'Article created successfully',
@@ -118,7 +120,7 @@ class ArticleController extends Controller
                             property: 'data',
                             type: 'array',
                             items: new OA\Items(
-                                ref: '#/components/schemas/ArticleResource'
+                                ref: '#/components/schemas/AdminArticleResource'
                             )
                         ),
                         new OA\Property(
@@ -156,6 +158,7 @@ class ArticleController extends Controller
         $perPage = min($request->integer('per_page', 10), 100);
 
         $articles = Article::query()
+            ->with('admin')
             ->latest()
             ->paginate($perPage);
 
@@ -191,7 +194,7 @@ class ArticleController extends Controller
                             property: 'data',
                             type: 'array',
                             items: new OA\Items(
-                                ref: '#/components/schemas/ArticleResource'
+                                ref: '#/components/schemas/AdminArticleResource'
                             )
                         ),
                         new OA\Property(
@@ -214,6 +217,7 @@ class ArticleController extends Controller
         $perPage = min($request->integer('per_page', 10), 100);
 
         $articles = Article::query()
+            ->with('admin')
             ->archived()
             ->latest()
             ->paginate($perPage);
@@ -242,7 +246,7 @@ class ArticleController extends Controller
                     properties: [
                         new OA\Property(
                             property: 'data',
-                            ref: '#/components/schemas/ArticleResource'
+                            ref: '#/components/schemas/AdminArticleResource'
                         )
                     ]
                 )
@@ -303,7 +307,7 @@ class ArticleController extends Controller
                         new OA\Property(property: 'message', type: 'string', example: 'Article updated successfully'),
                         new OA\Property(
                             property: 'data',
-                            ref: '#/components/schemas/ArticleResource'
+                            ref: '#/components/schemas/AdminArticleResource'
                         )
                     ]
                 )
@@ -335,7 +339,7 @@ class ArticleController extends Controller
 
         return response()->json([
             'message' => 'Article updated successfully',
-            'data' => new ArticleResource($article->fresh()),
+            'data' => new ArticleResource($article->refresh()->load('admin')),
         ]);
     }
 
@@ -380,7 +384,7 @@ class ArticleController extends Controller
                         new OA\Property(property: 'message', type: 'string', example: 'Thumbnail updated successfully'),
                         new OA\Property(
                             property: 'data',
-                            ref: '#/components/schemas/ArticleResource'
+                            ref: '#/components/schemas/AdminArticleResource'
                         )
                     ]
                 )
@@ -405,7 +409,7 @@ class ArticleController extends Controller
 
         return response()->json([
             'message' => 'Thumbnail updated successfully',
-            'data' => new ArticleResource($article->fresh()),
+            'data' => new ArticleResource($article->refresh()->load('admin')),
         ]);
     }
 
@@ -440,7 +444,7 @@ class ArticleController extends Controller
                         new OA\Property(property: 'message', type: 'string', example: 'Status updated successfully'),
                         new OA\Property(
                             property: 'data',
-                            ref: '#/components/schemas/ArticleResource'
+                            ref: '#/components/schemas/AdminArticleResource'
                         )
                     ]
                 )
@@ -461,7 +465,7 @@ class ArticleController extends Controller
 
         return response()->json([
             'message' => 'Status updated successfully',
-            'data' => new ArticleResource($article->refresh()),
+            'data' => new ArticleResource($article->refresh()->load('admin')),
         ]);
     }
 
