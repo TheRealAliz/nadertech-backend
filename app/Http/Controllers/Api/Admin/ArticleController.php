@@ -57,7 +57,7 @@ class ArticleController extends Controller
                         new OA\Property(property: 'message', type: 'string', example: 'Article created successfully'),
                         new OA\Property(
                             property: 'data',
-                            ref: '#/components/schemas/ArticleResource'
+                            ref: '#/components/schemas/AdminArticleResource'
                         )
                     ]
                 )
@@ -118,7 +118,7 @@ class ArticleController extends Controller
                             property: 'data',
                             type: 'array',
                             items: new OA\Items(
-                                ref: '#/components/schemas/ArticleResource'
+                                ref: '#/components/schemas/AdminArticleResource'
                             )
                         ),
                         new OA\Property(
@@ -191,7 +191,7 @@ class ArticleController extends Controller
                             property: 'data',
                             type: 'array',
                             items: new OA\Items(
-                                ref: '#/components/schemas/ArticleResource'
+                                ref: '#/components/schemas/AdminArticleResource'
                             )
                         ),
                         new OA\Property(
@@ -242,7 +242,7 @@ class ArticleController extends Controller
                     properties: [
                         new OA\Property(
                             property: 'data',
-                            ref: '#/components/schemas/ArticleResource'
+                            ref: '#/components/schemas/AdminArticleResource'
                         )
                     ]
                 )
@@ -303,7 +303,7 @@ class ArticleController extends Controller
                         new OA\Property(property: 'message', type: 'string', example: 'Article updated successfully'),
                         new OA\Property(
                             property: 'data',
-                            ref: '#/components/schemas/ArticleResource'
+                            ref: '#/components/schemas/AdminArticleResource'
                         )
                     ]
                 )
@@ -380,7 +380,7 @@ class ArticleController extends Controller
                         new OA\Property(property: 'message', type: 'string', example: 'Thumbnail updated successfully'),
                         new OA\Property(
                             property: 'data',
-                            ref: '#/components/schemas/ArticleResource'
+                            ref: '#/components/schemas/AdminArticleResource'
                         )
                     ]
                 )
@@ -440,7 +440,7 @@ class ArticleController extends Controller
                         new OA\Property(property: 'message', type: 'string', example: 'Status updated successfully'),
                         new OA\Property(
                             property: 'data',
-                            ref: '#/components/schemas/ArticleResource'
+                            ref: '#/components/schemas/AdminArticleResource'
                         )
                     ]
                 )
