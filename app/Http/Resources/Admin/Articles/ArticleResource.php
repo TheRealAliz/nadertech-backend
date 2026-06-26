@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources\Admin;
+namespace App\Http\Resources\Admin\Articles;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -15,8 +15,7 @@ class ArticleResource extends JsonResource
             'title' => $this->title,
             'slug' => $this->slug,
             'content' => $this->content,
-            'thumbnail' => $this->thumbnail,
-            'thumbnail_url' => $this->thumbnail ? asset('storage/' . $this->thumbnail) : null,
+            'thumbnail' => $this->thumbnail ? asset('storage/' . $this->thumbnail) : null,
             'thumbnail_alt' => $this->thumbnail_alt,
             'meta_title' => $this->meta_title,
             'meta_description' => $this->meta_description,
