@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ArticleStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Article extends Model
 {
@@ -27,6 +28,11 @@ class Article extends Model
         'published_at' => 'datetime',
         'status' => ArticleStatus::class,
     ];
+
+    public function admin(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'admin_id');
+    }
 
     public function scopePublishedLatest(Builder $query): Builder
     {

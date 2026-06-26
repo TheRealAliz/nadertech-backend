@@ -27,6 +27,8 @@ class ArticleResource extends JsonResource
             'published_at' => $this->published_at,
             'created_at' => $this->created_at->toDateTimeString(),
             'updated_at' => $this->updated_at->toDateTimeString(),
+
+            'admin' => $this->whenLoaded('admin'),
         ];
     }
 }

@@ -83,6 +83,8 @@ class ArticleController extends Controller
 
         $article = Article::create($data);
 
+        $article->load('admin');
+
         return response()->json([
             'message' => 'Article created successfully',
             'data' => new ArticleResource($article),
@@ -156,6 +158,7 @@ class ArticleController extends Controller
         $perPage = min($request->integer('per_page', 10), 100);
 
         $articles = Article::query()
+            ->with('admin')
             ->latest()
             ->paginate($perPage);
 
@@ -214,6 +217,7 @@ class ArticleController extends Controller
         $perPage = min($request->integer('per_page', 10), 100);
 
         $articles = Article::query()
+            ->with('admin')
             ->archived()
             ->latest()
             ->paginate($perPage);
@@ -335,7 +339,7 @@ class ArticleController extends Controller
 
         return response()->json([
             'message' => 'Article updated successfully',
-            'data' => new ArticleResource($article->fresh()),
+            'data' => new ArticleResource($article->refresh()->load('admin')),
         ]);
     }
 
@@ -405,7 +409,7 @@ class ArticleController extends Controller
 
         return response()->json([
             'message' => 'Thumbnail updated successfully',
-            'data' => new ArticleResource($article->fresh()),
+            'data' => new ArticleResource($article->refresh()->load('admin')),
         ]);
     }
 
@@ -461,7 +465,7 @@ class ArticleController extends Controller
 
         return response()->json([
             'message' => 'Status updated successfully',
-            'data' => new ArticleResource($article->refresh()),
+            'data' => new ArticleResource($article->refresh()->load('admin')),
         ]);
     }
 

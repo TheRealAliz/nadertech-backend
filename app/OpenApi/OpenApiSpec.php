@@ -40,6 +40,22 @@ use OpenApi\Attributes as OA;
     type: "object"
 )]
 #[OA\Schema(
+    schema: "AdminResource",
+    title: "Admin Resource",
+    description: "Admin resource representation",
+    properties: [
+        new OA\Property(property: "id", type: "integer", example: 1),
+        new OA\Property(property: "full_name", type: "string", example: "علی احمدی"),
+        new OA\Property(property: "username", type: "string", example: "ali_ahmadi"),
+        new OA\Property(property: "email", type: "string", format: "email", example: "ali@example.com"),
+        new OA\Property(property: "mobile", type: "string", example: "09123456789"),
+        new OA\Property(property: "avatar", type: "string", example: "/avatars/avatar_5_1734567890.webp"),
+        new OA\Property(property: "is_active", type: "boolean", example: true),
+        new OA\Property(property: "created_at", type: "string", format: "date-time"),
+    ],
+    type: "object"
+)]
+#[OA\Schema(
     schema: "PageItemResource",
     title: "Page Item Resource",
     description: "Page item resource representation",
@@ -94,7 +110,6 @@ use OpenApi\Attributes as OA;
     description: 'Admin article resource representation',
     properties: [
         new OA\Property(property: 'id', type: 'integer', example: 1),
-        new OA\Property(property: 'admin_id', type: 'integer', example: 1),
         new OA\Property(property: 'title', type: 'string', example: 'اولین مقاله'),
         new OA\Property(property: 'slug', type: 'string', example: 'first-article'),
         new OA\Property(property: 'content', type: 'string', example: 'متن مقاله...'),
@@ -107,6 +122,12 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'published_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-25T12:00:00.000000Z'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+        new OA\Property(
+            property: 'admin',
+            ref: '#/components/schemas/AdminResource',
+            nullable: true,
+            description: 'Admin user who created/updated the article'
+        ),
     ],
     type: 'object'
 )]
