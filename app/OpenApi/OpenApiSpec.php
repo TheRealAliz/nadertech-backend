@@ -88,6 +88,28 @@ use OpenApi\Attributes as OA;
     ],
     type: 'object'
 )]
+#[OA\Schema(
+    schema: 'ArticleResource',
+    title: 'Article Resource',
+    description: 'Article resource representation',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'admin_id', type: 'integer', example: 1),
+        new OA\Property(property: 'title', type: 'string', example: 'اولین مقاله'),
+        new OA\Property(property: 'slug', type: 'string', example: 'first-article'),
+        new OA\Property(property: 'content', type: 'string', example: 'متن مقاله...'),
+        new OA\Property(property: 'thumbnail', type: 'string', nullable: true, example: 'http://nadertechnologyteam.ir/storage/images/articles/abc.jpg'),
+        new OA\Property(property: 'thumbnail_alt', type: 'string', nullable: true, example: 'تصویر مقاله'),
+        new OA\Property(property: 'meta_title', type: 'string', nullable: true, example: 'عنوان سئو'),
+        new OA\Property(property: 'meta_description', type: 'string', nullable: true, example: 'توضیحات سئو'),
+        new OA\Property(property: 'views_count', type: 'integer', example: 120),
+        new OA\Property(property: 'status', type: 'string', description: 'Article status (draft, published, archived)', example: 'published'),
+        new OA\Property(property: 'published_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-25T12:00:00.000000Z'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+    ],
+    type: 'object'
+)]
 class OpenApiSpec
 {
 }
