@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FaqController;
 use App\Http\Controllers\Api\LotteryController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\Admin\ProjectRequestController as AdminProjectRequestController;
 use App\Http\Controllers\Api\ProjectRequestController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\ArticleController;
@@ -182,4 +183,13 @@ Route::middleware(['auth:admin'])->prefix('admin')->group(function () {
             ->middleware('permission:admin.articles.update.thumbnail');
     });
 
+    // ======================================= Project Requests =======================================
+
+    Route::prefix('requests')->group(function () {
+        Route::get('/', [AdminProjectRequestController::class, 'index'])
+            ->middleware('permission:admin.requests.view');
+
+        Route::get('/{request}', [AdminProjectRequestController::class, 'show'])
+            ->middleware('permission:admin.requests.view');
+    });
 });

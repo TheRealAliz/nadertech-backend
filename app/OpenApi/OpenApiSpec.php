@@ -175,6 +175,27 @@ use OpenApi\Attributes as OA;
     ],
     type: 'object'
 )]
+#[OA\Schema(
+    schema: 'ProjectRequestResource',
+    title: 'Project Request Resource',
+    description: 'Project request resource representation with service relationship',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'name', type: 'string', example: 'علی احمدی'),
+        new OA\Property(property: 'mobile', type: 'string', example: '09123456789'),
+        new OA\Property(property: 'email', type: 'string', format: 'email', example: 'ali@example.com'),
+        new OA\Property(property: 'description', type: 'string', example: 'من به یک وب‌سایت فروشگاهی نیاز دارم'),
+        new OA\Property(
+            property: 'service',
+            ref: '#/components/schemas/ProjectServiceResource',
+            nullable: true,
+            description: 'The requested service'
+        ),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2026-06-25T10:00:00.000000Z'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', example: '2026-06-25T10:00:00.000000Z'),
+    ],
+    type: 'object'
+)]
 class OpenApiSpec
 {
 }
