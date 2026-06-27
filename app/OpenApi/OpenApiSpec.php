@@ -27,17 +27,24 @@ use OpenApi\Attributes as OA;
     schema: "UserResource",
     title: "User Resource",
     description: "User resource representation",
+    type: "object",
     properties: [
         new OA\Property(property: "id", type: "integer", example: 1),
         new OA\Property(property: "full_name", type: "string", example: "علی احمدی"),
         new OA\Property(property: "username", type: "string", example: "ali_ahmadi"),
         new OA\Property(property: "email", type: "string", format: "email", example: "ali@example.com"),
         new OA\Property(property: "mobile", type: "string", example: "09123456789"),
-        new OA\Property(property: "avatar", type: "string", example: "/avatars/avatar_5_1734567890.webp"),
+        new OA\Property(property: "birth_date", type: "string", format: "date", nullable: true, example: "2000-05-15"),
+        new OA\Property(property: "national_code", type: "string", nullable: true, example: "1234567890"),
+        new OA\Property(property: "postal_code", type: "string", nullable: true, example: "1234567890"),
+        new OA\Property(property: "province", type: "string", nullable: true, example: "خراسان شمالی"),
+        new OA\Property(property: "address", type: "string", nullable: true, example: "بجنورد، خیابان امام، پلاک ۱۲"),
+        new OA\Property(property: "avatar", type: "string", nullable: true, example: "/avatars/avatar_5_1734567890.webp"),
         new OA\Property(property: "mobile_verified_at", type: "string", format: "date-time", nullable: true),
+        new OA\Property(property: "email_verified_at", type: "string", format: "date-time", nullable: true),
         new OA\Property(property: "created_at", type: "string", format: "date-time"),
-    ],
-    type: "object"
+        new OA\Property(property: "updated_at", type: "string", format: "date-time"),
+    ]
 )]
 #[OA\Schema(
     schema: "AdminResource",
