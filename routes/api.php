@@ -108,36 +108,78 @@ Route::prefix('faqs')->group(function () {
 
 // ============================================== Admin ===============================================
 
-Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth:admin'])->prefix('admin')->group(function () {
 
     // ========================================= Authenticate =========================================
 
-    Route::withoutMiddleware('admin')->prefix('/auth')->group(function () {
+    Route::withoutMiddleware('auth:admin')->prefix('/auth')->group(function () {
         Route::post('/login', [AdminAuthController::class, 'login']);
     });
 
     // ============================================= Users ============================================
 
     Route::prefix('users')->group(function () {
-        Route::get('/', [UserController::class, 'index']);
-        Route::get('/{user}', [UserController::class, 'show']);
+        Route::get('/', [UserController::class, 'index'])
+            ->middleware('permission:admin.users.view');
+
+        Route::get('/{user}', [UserController::class, 'show'])
+            ->middleware('permission:admin.users.view.single');
     });
 
     // ======================================= Home Page Banners ======================================
 
     Route::prefix('banners')->group(function () {
-        Route::apiResource('/', AdminBannerController::class);
-        Route::put('/{banner}/status', [AdminBannerController::class, 'updateStatus']);
-        Route::put('/{banner}/image', [AdminBannerController::class, 'updateImage']);
-        Route::put('/reorder', [AdminBannerController::class, 'reorder']);
+        Route::get('/', [AdminBannerController::class, 'index'])
+            ->middleware('permission:admin.banners.view');
+
+        Route::post('/', [AdminBannerController::class, 'store'])
+            ->middleware('permission:admin.banners.create');
+
+        Route::get('/{banner}', [AdminBannerController::class, 'show'])
+            ->middleware('permission:admin.banners.view');
+
+        Route::put('/{banner}', [AdminBannerController::class, 'update'])
+            ->middleware('permission:admin.banners.update');
+
+        Route::delete('/{banner}', [AdminBannerController::class, 'destroy'])
+            ->middleware('permission:admin.banners.delete');
+
+        Route::put('/{banner}/status', [AdminBannerController::class, 'updateStatus'])
+            ->middleware('permission:admin.banners.update.status');
+
+        Route::put('/{banner}/image', [AdminBannerController::class, 'updateImage'])
+            ->middleware('permission:admin.banners.update.image');
+
+        Route::put('/reorder', [AdminBannerController::class, 'reorder'])
+            ->middleware('permission:admin.banners.reorder');
     });
 
     // =========================================== Articles ===========================================
 
     Route::prefix('articles')->group(function () {
-        Route::apiResource('/', AdminArticleController::class);
-        Route::get('/archived', [AdminArticleController::class, 'archived']);
-        Route::put('/{article}/status', [AdminArticleController::class, 'updateStatus']);
-        Route::put('/{article}/thumbnail', [AdminArticleController::class, 'updateThumbnail']);
+        Route::get('/', [AdminArticleController::class, 'index'])
+            ->middleware('permission:admin.articles.view');
+
+        Route::post('/', [AdminArticleController::class, 'store'])
+            ->middleware('permission:admin.articles.create');
+
+        Route::get('/{article}', [AdminArticleController::class, 'show'])
+            ->middleware('permission:admin.articles.view');
+
+        Route::put('/{article}', [AdminArticleController::class, 'update'])
+            ->middleware('permission:admin.articles.update');
+
+        Route::delete('/{article}', [AdminArticleController::class, 'destroy'])
+            ->middleware('permission:admin.articles.delete');
+
+        Route::get('/archived', [AdminArticleController::class, 'archived'])
+            ->middleware('permission:admin.articles.archived.view');
+
+        Route::put('/{article}/status', [AdminArticleController::class, 'updateStatus'])
+            ->middleware('permission:admin.articles.update.status');
+
+        Route::put('/{article}/thumbnail', [AdminArticleController::class, 'updateThumbnail'])
+            ->middleware('permission:admin.articles.update.thumbnail');
     });
+
 });
