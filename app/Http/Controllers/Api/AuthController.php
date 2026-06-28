@@ -50,13 +50,13 @@ class AuthController extends Controller
                         new OA\Property(property: 'data', properties: [
                             new OA\Property(property: 'access_token', type: 'string', example: '1|abc123...'),
                             new OA\Property(property: 'token_type', type: 'string', example: 'Bearer'),
-                            new OA\Property(property: 'user', properties: [
-                                new OA\Property(property: 'id', type: 'integer', example: 1),
-                                new OA\Property(property: 'full_name', type: 'string', example: 'علی احمدی'),
-                                new OA\Property(property: 'username', type: 'string', example: 'ali_ahmadi'),
-                                new OA\Property(property: 'email', type: 'string', example: 'ali@example.com'),
-                                new OA\Property(property: 'mobile', type: 'string', example: '09123456789'),
-                            ], type: 'object')
+                            new OA\Property(
+                                property: 'data',
+                                type: 'array',
+                                items: new OA\Items(
+                                    ref: '#/components/schemas/UserResource'
+                                )
+                            ),
                         ], type: 'object')
                     ]
                 )
@@ -407,9 +407,14 @@ class AuthController extends Controller
                 required: ['full_name', 'username', 'email', 'mobile', 'password', 'password_confirmation'],
                 properties: [
                     new OA\Property(property: 'full_name', type: 'string', maxLength: 255, example: 'علی احمدی'),
-                    new OA\Property(property: 'username', type: 'string', minLength: 3, maxLength: 50, example: 'ali_ahmadi', description: 'Only letters, numbers, dash and underscore'),
+                    new OA\Property(property: 'username', type: 'string', minLength: 3, maxLength: 50, example: 'ali_ahmadi'),
                     new OA\Property(property: 'email', type: 'string', format: 'email', maxLength: 255, example: 'ali@example.com'),
-                    new OA\Property(property: 'mobile', type: 'string', example: '09123456789', description: '11 digits starting with 09'),
+                    new OA\Property(property: 'mobile', type: 'string', example: '09123456789'),
+                    new OA\Property(property: 'birth_date', type: 'string', format: 'date', nullable: true, example: '2000-05-15'),
+                    new OA\Property(property: 'national_code', type: 'string', nullable: true, example: '1234567890'),
+                    new OA\Property(property: 'postal_code', type: 'string', nullable: true, example: '1234567890'),
+                    new OA\Property(property: 'province', type: 'string', nullable: true, example: 'خراسان شمالی'),
+                    new OA\Property(property: 'address', type: 'string', nullable: true, example: 'بجنورد، خیابان امام، پلاک ۱۲'),
                     new OA\Property(property: 'password', type: 'string', format: 'password', minLength: 8, example: '12345678'),
                     new OA\Property(property: 'password_confirmation', type: 'string', format: 'password', example: '12345678'),
                 ]
@@ -421,16 +426,23 @@ class AuthController extends Controller
                 description: 'User registered successfully, OTP sent',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'message', type: 'string', example: 'ثبت‌نام با موفقیت انجام شد. کد تأیید به موبایل شما ارسال شد.'),
+                        new OA\Property(
+                            property: 'message',
+                            type: 'string',
+                            example: 'ثبت‌نام با موفقیت انجام شد. کد تأیید به شماره موبایل ارسال شد.'
+                        ),
                         new OA\Property(
                             property: 'data',
+                            type: 'object',
                             properties: [
-                                new OA\Property(property: 'login_token', type: 'string', example: 'eyJpdiI6Ik5UWT...', description: 'Encrypted user ID, required for OTP verification'),
-                                new OA\Property(property: 'expires_in', type: 'integer', example: 300, description: 'OTP expiration time in seconds'),
-                                new OA\Property(property: 'user', ref: '#/components/schemas/UserResource'),
-                            ],
-                            type: 'object'
-                        )
+                                new OA\Property(property: 'login_token', type: 'string'),
+                                new OA\Property(property: 'expires_in', type: 'integer', example: 120),
+                                new OA\Property(
+                                    property: 'user',
+                                    ref: '#/components/schemas/UserResource'
+                                ),
+                            ]
+                        ),
                     ]
                 )
             ),
@@ -462,6 +474,11 @@ class AuthController extends Controller
             'username' => $validated['username'],
             'email' => $validated['email'],
             'mobile' => $validated['mobile'],
+            'birth_date' => $validated['birth_date'] ?? null,
+            'national_code' => $validated['national_code'] ?? null,
+            'postal_code' => $validated['postal_code'] ?? null,
+            'province' => $validated['province'] ?? null,
+            'address' => $validated['address'] ?? null,
             'password' => Hash::make($validated['password']),
             'mobile_verified_at' => null,
         ]);
