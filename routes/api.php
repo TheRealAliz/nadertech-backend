@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\FaqController;
 use App\Http\Controllers\Api\LotteryController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\Admin\ProjectRequestController as AdminProjectRequestController;
+use App\Http\Controllers\Api\Admin\ResumeController as AdminResumeController;
 use App\Http\Controllers\Api\ProjectRequestController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\ArticleController;
@@ -191,5 +192,27 @@ Route::middleware(['auth:admin'])->prefix('admin')->group(function () {
 
         Route::get('/{request}', [AdminProjectRequestController::class, 'show'])
             ->middleware('permission:admin.requests.view');
+    });
+
+    // ============================================ Resumes ===========================================
+
+    Route::prefix('resume')->group(function () {
+        Route::get('/', [AdminResumeController::class, 'index'])
+            ->middleware('permission:admin.resumes.view');
+
+        Route::post('/', [AdminResumeController::class, 'store'])
+            ->middleware('permission:admin.resumes.create');
+
+        Route::get('/{resume}', [AdminResumeController::class, 'show'])
+            ->middleware('permission:admin.resumes.view');
+
+        Route::put('/{resume}', [AdminResumeController::class, 'update'])
+            ->middleware('permission:admin.resumes.update');
+
+        Route::delete('/{resume}', [AdminResumeController::class, 'destroy'])
+            ->middleware('permission:admin.resumes.delete');
+
+        Route::patch('/{resume}/status', [AdminResumeController::class, 'updateStatus'])
+            ->middleware('permission:admin.resumes.update');
     });
 });
