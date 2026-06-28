@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Resume\StoreResumeRequest;
 use App\Http\Requests\Admin\Resume\UpdateResumeRequest;
+use App\Http\Requests\Admin\Resume\UpdateResumeStatusRequest;
 use App\Http\Resources\Admin\Resume\ResumeListResource;
 use App\Http\Resources\Admin\Resume\ResumeResource;
 use App\Models\Resume;
@@ -153,6 +154,20 @@ class ResumeController extends Controller
                 'data' => new ResumeResource($resume),
             ]);
         });
+    }
+
+    public function updateStatus(UpdateResumeStatusRequest $request, Resume $resume): JsonResponse
+    {
+        $data = $request->validated();
+
+        $resume->update($data);
+
+        $resume->load(['review', 'images', 'category']);
+
+        return response()->json([
+            'message' => 'Resume status updated successfully',
+            'data' => new ResumeResource($resume),
+        ]);
     }
 
     public function destroy(Resume $resume): JsonResponse
