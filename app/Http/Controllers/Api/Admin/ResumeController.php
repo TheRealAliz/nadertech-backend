@@ -4,11 +4,14 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Resume\StoreResumeRequest;
+use App\Http\Resources\Admin\Resume\ResumeListResource;
 use App\Http\Resources\Admin\Resume\ResumeResource;
 use App\Models\Resume;
 use App\Services\ImageUploadService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Str;
 
 class ResumeController extends Controller
@@ -68,5 +71,15 @@ class ResumeController extends Controller
                 'data' => new ResumeResource($resume),
             ], 201);
         });
+    }
+
+    public function index(Request $request): AnonymousResourceCollection
+    {
+        $resumes = Resume::query()
+            ->with('firstImage')
+            ->latest()
+            ->paginate(6);
+
+        return ResumeListResource::collection($resumes);
     }
 }

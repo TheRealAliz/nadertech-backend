@@ -32,6 +32,11 @@ class Resume extends Model
         return $this->hasMany(ResumeImage::class)->orderBy('sort_order');
     }
 
+    public function firstImage()
+    {
+        return $this->hasMany(ResumeImage::class)->orderBy('sort_order')->first();
+    }
+
     public function review(): HasOne
     {
         return $this->hasOne(ResumeReview::class);
