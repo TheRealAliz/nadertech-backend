@@ -52,7 +52,13 @@ class RolesAndPermissionsSeeder extends Seeder
             'admin.lotteries.winners.view',
 
             // Project Requests
-            'admin.requests.view'
+            'admin.requests.view',
+
+            // Resumes
+            'admin.resumes.view',
+            'admin.resumes.create',
+            'admin.resumes.update',
+            'admin.resumes.delete',
         ];
 
         foreach ($permissions as $permission) {

@@ -203,6 +203,80 @@ use OpenApi\Attributes as OA;
     ],
     type: 'object'
 )]
+#[OA\Schema(
+    schema: 'ResumeResource',
+    title: 'Resume Resource',
+    description: 'Resume full resource representation with all relationships',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'title', type: 'string', example: 'طراحی وب‌سایت فروشگاهی'),
+        new OA\Property(property: 'slug', type: 'string', example: 'ecommerce-website-design'),
+        new OA\Property(property: 'description', type: 'string', example: 'توضیحات کامل پروژه'),
+        new OA\Property(property: 'is_published', type: 'boolean', example: true),
+        new OA\Property(
+            property: 'category',
+            type: 'string',
+            nullable: true,
+            example: 'وب‌سایت',
+            description: 'Category title'
+        ),
+        new OA\Property(
+            property: 'review',
+            ref: '#/components/schemas/ResumeReviewResource',
+            nullable: true,
+            description: 'Customer review'
+        ),
+        new OA\Property(
+            property: 'images',
+            type: 'array',
+            description: 'Resume images',
+            items: new OA\Items(ref: '#/components/schemas/ResumeImageResource')
+        ),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2026-06-25T10:00:00.000000Z'),
+    ],
+    type: 'object'
+)]
+#[OA\Schema(
+    schema: 'ResumeListResource',
+    title: 'Resume List Resource',
+    description: 'Resume list resource representation (summary for listing)',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'title', type: 'string', example: 'طراحی وب‌سایت فروشگاهی'),
+        new OA\Property(
+            property: 'cover',
+            ref: '#/components/schemas/ResumeImageResource',
+            nullable: true,
+            description: 'First image of the resume as cover'
+        ),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2026-06-25T10:00:00.000000Z'),
+    ],
+    type: 'object'
+)]
+#[OA\Schema(
+    schema: 'ResumeReviewResource',
+    title: 'Resume Review Resource',
+    description: 'Resume review/customer feedback resource representation',
+    properties: [
+        new OA\Property(property: 'name', type: 'string', example: 'علی احمدی'),
+        new OA\Property(property: 'position', type: 'string', nullable: true, example: 'مدیر عامل'),
+        new OA\Property(property: 'avatar', type: 'string', nullable: true, example: 'http://localhost/storage/resumes/avatar-1.jpg'),
+        new OA\Property(property: 'description', type: 'string', example: 'نظر مشتری درباره پروژه'),
+    ],
+    type: 'object'
+)]
+#[OA\Schema(
+    schema: 'ResumeImageResource',
+    title: 'Resume Image Resource',
+    description: 'Resume image resource representation',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'image', type: 'string', example: 'http://localhost/storage/resumes/image-1.jpg'),
+        new OA\Property(property: 'sort_order', type: 'integer', example: 0),
+        new OA\Property(property: 'alt', type: 'string', nullable: true, example: 'تصویر پروژه'),
+    ],
+    type: 'object'
+)]
 class OpenApiSpec
 {
 }
