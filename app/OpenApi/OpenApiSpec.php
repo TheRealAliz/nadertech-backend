@@ -277,6 +277,40 @@ use OpenApi\Attributes as OA;
     ],
     type: 'object'
 )]
+#[OA\Schema(
+    schema: 'LotteryResource',
+    title: 'Lottery Resource',
+    description: 'Lottery resource representation',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'title', type: 'string', example: 'قرعه کشی تابستان'),
+        new OA\Property(property: 'description', type: 'string', nullable: true, example: 'قرعه کشی ویژه کاربران'),
+        new OA\Property(property: 'starts_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-08T10:00:00+03:30'),
+        new OA\Property(property: 'ends_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-15T23:59:59+03:30'),
+        new OA\Property(property: 'capacity', type: 'integer', nullable: true, example: 1000),
+        new OA\Property(property: 'winner_count', type: 'integer', example: 3),
+        new OA\Property(property: 'status', type: 'string', example: 'active'),
+        new OA\Property(property: 'drawn_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-15T23:59:59+03:30'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2026-06-01T12:00:00Z'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', example: '2026-06-10T12:00:00Z'),
+    ],
+    type: 'object'
+)]
+#[OA\Schema(
+    schema: 'LotteryListResource',
+    title: 'Lottery List Resource',
+    description: 'Lottery list resource representation',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'title', type: 'string', example: 'قرعه کشی تابستان'),
+        new OA\Property(property: 'starts_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-08T10:00:00+03:30'),
+        new OA\Property(property: 'ends_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-15T23:59:59+03:30'),
+        new OA\Property(property: 'winner_count', type: 'integer', example: 3),
+        new OA\Property(property: 'status', type: 'string', example: 'active'),
+        new OA\Property(property: 'drawn_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-15T23:59:59+03:30'),
+    ],
+    type: 'object'
+)]
 class OpenApiSpec
 {
 }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Admin\ArticleController as AdminArticleController;
 use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Api\Admin\BannerController as AdminBannerController;
+use App\Http\Controllers\Api\Admin\LotteryController as AdminLotteryController;
 use App\Http\Controllers\Api\ProjectServiceController;
 use App\Http\Controllers\Api\PageItemController;
 use Illuminate\Support\Facades\Route;
@@ -65,21 +66,15 @@ Route::prefix('requests')->group(function () {
 
 // ============================================ Lotteries ===========================================
 
-Route::get('/lotteries', [LotteryController::class, 'index']);
-Route::get('/lotteries/{lottery}', [LotteryController::class, 'show']);
+Route::prefix('lotteris')->group(function () {
+    Route::get('/', [LotteryController::class, 'index']);
+    Route::get('/{lottery}', [LotteryController::class, 'show']);
 
-Route::middleware('api.token')->group(function () {
-    Route::post('/lotteries/{lottery}/register', [LotteryController::class, 'register']);
-    Route::get('/lotteries/{lottery}/my-status', [LotteryController::class, 'myStatus']);
-    Route::get('/my/lotteries', [LotteryController::class, 'myLotteries']);
-});
-
-Route::prefix('admin')->middleware('api.token')->group(function () {
-    Route::post('/lotteries', [LotteryController::class, 'store']);
-    Route::put('/lotteries/{lottery}', [LotteryController::class, 'update']);
-    Route::get('/lotteries/{lottery}/entries', [LotteryController::class, 'entries']);
-    Route::post('/lotteries/{lottery}/draw', [LotteryController::class, 'draw']);
-    Route::get('/lotteries/{lottery}/winners', [LotteryController::class, 'winners']);
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/{lottery}/register', [LotteryController::class, 'register']);
+        Route::get('/{lottery}/my-status', [LotteryController::class, 'myStatus']);
+        Route::get('/me', [LotteryController::class, 'myLotteries']);
+    });
 });
 
 // ======================================== Home Page Banners =========================================
@@ -214,5 +209,17 @@ Route::middleware(['auth:admin'])->prefix('admin')->group(function () {
 
         Route::patch('/{resume}/status', [AdminResumeController::class, 'updateStatus'])
             ->middleware('permission:admin.resumes.update');
+    });
+
+    // =========================================== Lotteries ==========================================
+
+    Route::prefix('lotteries')->group(function () {
+        Route::get('/', [AdminLotteryController::class, 'index']);
+        Route::get('/{lottery}', [AdminLotteryController::class, 'show']);
+        Route::post('/', [AdminLotteryController::class, 'store']);
+        Route::put('/{lottery}', [AdminLotteryController::class, 'update']);
+        Route::get('/{lottery}/entries', [AdminLotteryController::class, 'entries']);
+        Route::post('/{lottery}/draw', [AdminLotteryController::class, 'draw']);
+        Route::get('/{lottery}/winners', [AdminLotteryController::class, 'winners']);
     });
 });
