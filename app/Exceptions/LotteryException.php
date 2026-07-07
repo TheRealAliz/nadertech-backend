@@ -68,4 +68,49 @@ class LotteryException extends BaseException
             'LOTTERY_007',
         );
     }
+
+    public static function alreadyDrawn(): self
+    {
+        throw new self(
+            'This lottery has already been drawn.',
+            409,
+            'LOTTERY_008'
+        );
+    }
+
+    public static function invalidDrawStatus(): self
+    {
+        throw new self(
+            'Lottery cannot be drawn while it is in draft status.',
+            409,
+            'LOTTERY_009'
+        );
+    }
+
+    public static function drawNotAvailableYet(): self
+    {
+        throw new self(
+            'The lottery end time has not been reached yet.',
+            409,
+            'LOTTERY_010'
+        );
+    }
+
+    public static function winnersRequired(): self
+    {
+        throw new self(
+            'Winner list is required.',
+            422,
+            'LOTTERY_011'
+        );
+    }
+
+    public static function tooManyWinners(): self
+    {
+        throw new self(
+            'The number of winners exceeds the allowed winner count.',
+            422,
+            'LOTTERY_012'
+        );
+    }
 }

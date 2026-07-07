@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Exceptions\Lottery\LotteryException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Lottery\StoreLotteryRequest;
 use App\Http\Requests\Admin\Lottery\UpdateLotteryRequest;
@@ -101,7 +102,7 @@ class LotteryController extends Controller
 
         return response()->json([
             'message' => 'قرعه‌کشی با موفقیت ایجاد شد.',
-            'lottery' => new LotteryResource($lottery),
+            'data' => new LotteryResource($lottery),
         ], 201);
     }
 
@@ -145,7 +146,7 @@ class LotteryController extends Controller
 
         return response()->json([
             'message' => 'قرعه‌کشی با موفقیت ویرایش شد.',
-            'lottery' => new LotteryResource($lottery->load(['entries', 'winners'])->fresh()),
+            'data' => new LotteryResource($lottery->load(['entries', 'winners'])->fresh()),
         ]);
     }
 
@@ -224,48 +225,41 @@ class LotteryController extends Controller
             new OA\Response(response: 409, description: 'Invalid lottery state'),
         ]
     )]
-    public function draw(Lottery $lottery): JsonResponse
+    public function draw(Request $request, Lottery $lottery): JsonResponse
     {
         if ($lottery->status === 'drawn') {
-            return response()->json([
-                'message' => 'این قرعه‌کشی قبلاً انجام شده است.',
-            ], 409);
+            LotteryException::alreadyDrawn();
         }
 
         if ($lottery->status === 'draft') {
-            return response()->json([
-                'message' => 'قرعه‌کشی در وضعیت draft قابل اجرا نیست.',
-            ], 409);
+            LotteryException::invalidDrawStatus();
         }
 
         if ($lottery->ends_at && now()->lt($lottery->ends_at)) {
-            return response()->json([
-                'message' => 'هنوز زمان پایان قرعه‌کشی نرسیده است.',
-            ], 409);
+            LotteryException::drawNotAvailableYet();
         }
 
-        return DB::transaction(function () use ($lottery) {
+        $winners = $request->input('winners');
+
+        if (!is_array($winners) || empty($winners)) {
+            LotteryException::winnersRequired();
+        }
+
+        if (count($winners) > $lottery->winner_count) {
+            LotteryException::tooManyWinners();
+        }
+
+        return DB::transaction(function () use ($lottery, $winners) {
+
             LotteryWinner::query()
                 ->where('lottery_id', $lottery->id)
                 ->delete();
 
-            $entries = LotteryEntry::query()
-                ->where('lottery_id', $lottery->id)
-                ->inRandomOrder()
-                ->limit($lottery->winner_count)
-                ->get();
-
-            if ($entries->isEmpty()) {
-                return response()->json([
-                    'message' => 'هیچ شرکت‌کننده‌ای برای این قرعه‌کشی وجود ندارد.',
-                ], 409);
-            }
-
-            foreach ($entries->values() as $index => $entry) {
-                LotteryWinner::query()->create([
+            foreach ($winners as $winner) {
+                LotteryWinner::create([
                     'lottery_id' => $lottery->id,
-                    'user_id' => $entry->user_id,
-                    'position' => $index + 1,
+                    'user_id' => $winner['user_id'],
+                    'position' => $winner['position'],
                 ]);
             }
 
@@ -274,15 +268,13 @@ class LotteryController extends Controller
                 'drawn_at' => now(),
             ]);
 
-            $winners = LotteryWinner::query()
-                ->with('user')
-                ->where('lottery_id', $lottery->id)
-                ->orderBy('position')
-                ->get();
-
             return response()->json([
-                'message' => 'قرعه‌کشی با موفقیت انجام شد.',
-                'winners' => $winners,
+                'message' => 'Lottery winners have been saved successfully.',
+                'data' => LotteryWinner::query()
+                    ->with('user')
+                    ->where('lottery_id', $lottery->id)
+                    ->orderBy('position')
+                    ->get(),
             ]);
         });
     }
