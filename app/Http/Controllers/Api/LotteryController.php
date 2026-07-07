@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\Lottery\LotteryException;
 use App\Http\Controllers\Controller;
 use App\Models\Lottery;
 use App\Models\LotteryEntry;
@@ -85,27 +86,19 @@ class LotteryController extends Controller
         $user = $request->user();
 
         if (!$user) {
-            return response()->json([
-                'message' => 'کاربر احراز هویت نشده است.',
-            ], 401);
+            LotteryException::unauthenticated();
         }
 
         if ($lottery->status !== 'active') {
-            return response()->json([
-                'message' => 'این قرعه‌کشی در حال حاضر فعال نیست.',
-            ], 409);
+            LotteryException::lotteryNotActive();
         }
 
         if ($lottery->starts_at && now()->lt($lottery->starts_at)) {
-            return response()->json([
-                'message' => 'زمان ثبت‌نام این قرعه‌کشی هنوز شروع نشده است.',
-            ], 409);
+            LotteryException::registrationNotStarted();
         }
 
         if ($lottery->ends_at && now()->gt($lottery->ends_at)) {
-            return response()->json([
-                'message' => 'مهلت ثبت‌نام این قرعه‌کشی به پایان رسیده است.',
-            ], 409);
+            LotteryException::registrationEnded();
         }
 
         $alreadyRegistered = LotteryEntry::query()
@@ -114,9 +107,7 @@ class LotteryController extends Controller
             ->exists();
 
         if ($alreadyRegistered) {
-            return response()->json([
-                'message' => 'شما قبلاً در این قرعه‌کشی ثبت‌نام کرده‌اید.',
-            ], 409);
+            LotteryException::alreadyRegistered();
         }
 
         if ($lottery->capacity !== null) {
@@ -125,13 +116,11 @@ class LotteryController extends Controller
                 ->count();
 
             if ($entriesCount >= $lottery->capacity) {
-                return response()->json([
-                    'message' => 'ظرفیت این قرعه‌کشی تکمیل شده است.',
-                ], 409);
+                LotteryException::capacityReached();
             }
         }
 
-        $entry = LotteryEntry::query()->create([
+        $entry = LotteryEntry::create([
             'lottery_id' => $lottery->id,
             'user_id' => $user->id,
             'registered_at' => now(),
