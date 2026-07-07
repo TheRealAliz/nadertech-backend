@@ -278,9 +278,9 @@ use OpenApi\Attributes as OA;
     type: 'object'
 )]
 #[OA\Schema(
-    schema: 'LotteryResource',
-    title: 'Lottery Resource',
-    description: 'Lottery resource representation',
+    schema: 'AdminLotteryResource',
+    title: 'Admin Lottery Resource',
+    description: 'Admin lottery resource representation',
     properties: [
         new OA\Property(property: 'id', type: 'integer', example: 1),
         new OA\Property(property: 'title', type: 'string', example: 'قرعه کشی تابستان'),
@@ -297,9 +297,9 @@ use OpenApi\Attributes as OA;
     type: 'object'
 )]
 #[OA\Schema(
-    schema: 'LotteryListResource',
-    title: 'Lottery List Resource',
-    description: 'Lottery list resource representation',
+    schema: 'AdminLotteryListResource',
+    title: 'Admin Lottery List Resource',
+    description: 'Admin lottery list resource representation',
     properties: [
         new OA\Property(property: 'id', type: 'integer', example: 1),
         new OA\Property(property: 'title', type: 'string', example: 'قرعه کشی تابستان'),
@@ -308,6 +308,60 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'winner_count', type: 'integer', example: 3),
         new OA\Property(property: 'status', type: 'string', example: 'active'),
         new OA\Property(property: 'drawn_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-15T23:59:59+03:30'),
+    ],
+    type: 'object'
+)]
+#[OA\Schema(
+    schema: 'LotteryResource',
+    title: 'Lottery Resource',
+    description: 'Lottery resource representation',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'title', type: 'string', example: 'قرعه‌کشی نوروزی'),
+        new OA\Property(property: 'description', type: 'string', nullable: true, example: 'توضیحات قرعه‌کشی'),
+        new OA\Property(property: 'starts_at', type: 'string', format: 'date-time', nullable: true),
+        new OA\Property(property: 'ends_at', type: 'string', format: 'date-time', nullable: true),
+        new OA\Property(property: 'capacity', type: 'integer', nullable: true, example: 100),
+        new OA\Property(property: 'winner_count', type: 'integer', example: 3),
+        new OA\Property(property: 'status', type: 'string', enum: ['active', 'draf', 'drawn', 'closed'], example: 'active'),
+        new OA\Property(property: 'drawn_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-15T23:59:59+03:30'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+    ],
+    type: 'object'
+)]
+#[OA\Schema(
+    schema: 'EntryResource',
+    title: 'Lottery Entry Resource',
+    description: 'Lottery entry resource representation',
+    properties: [
+        new OA\Property(
+            property: 'user',
+            ref: '#/components/schemas/UserResource',
+            nullable: true
+        ),
+        new OA\Property(
+            property: 'lottery',
+            ref: '#/components/schemas/LotteryResource',
+            nullable: true
+        ),
+        new OA\Property(property: 'registered_at', type: 'string', format: 'date-time'),
+    ],
+    type: 'object'
+)]
+#[OA\Schema(
+    schema: 'MyStatusResource',
+    title: 'Lottery My Status Resource',
+    description: 'User lottery status resource including entry and winner information',
+    properties: [
+        new OA\Property(
+            property: 'entry',
+            ref: '#/components/schemas/EntryResource',
+            nullable: true,
+            description: 'User entry for this lottery'
+        ),
+        new OA\Property(property: 'winner_position', type: 'integer', example: 1),
+        new OA\Property(property: 'is_registered', type: 'boolean', example: true),
+        new OA\Property(property: 'is_winner', type: 'boolean', example: false),
     ],
     type: 'object'
 )]

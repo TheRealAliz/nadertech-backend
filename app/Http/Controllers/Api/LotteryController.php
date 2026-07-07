@@ -13,7 +13,6 @@ use App\Models\LotteryWinner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Facades\DB;
 use OpenApi\Attributes as OA;
 
 class LotteryController extends Controller
@@ -22,11 +21,43 @@ class LotteryController extends Controller
         path: '/api/lotteries',
         tags: ['Lottery'],
         summary: 'List lotteries',
+        description: 'Get paginated list of active lotteries',
+        parameters: [
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer', example: 1)
+            ),
+            new OA\Parameter(
+                name: 'per_page',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer', example: 10, minimum: 1, maximum: 100)
+            ),
+        ],
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'Lotteries list'
-            )
+                description: 'Lotteries list',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/LotteryResource')
+                        ),
+                        new OA\Property(
+                            property: 'links',
+                            type: 'object'
+                        ),
+                        new OA\Property(
+                            property: 'meta',
+                            type: 'object'
+                        ),
+                    ]
+                )
+            ),
         ]
     )]
     public function index(Request $request): AnonymousResourceCollection
@@ -45,17 +76,38 @@ class LotteryController extends Controller
         path: '/api/lotteries/{lottery}',
         tags: ['Lottery'],
         summary: 'Show lottery details',
+        description: 'Get detailed information about a specific lottery',
         parameters: [
             new OA\Parameter(
                 name: 'lottery',
                 in: 'path',
                 required: true,
+                description: 'Lottery ID',
                 schema: new OA\Schema(type: 'integer', example: 1)
             )
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Lottery details'),
-            new OA\Response(response: 404, description: 'Lottery not found'),
+            new OA\Response(
+                response: 200,
+                description: 'Lottery details',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            ref: '#/components/schemas/LotteryResource'
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Lottery not found',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Lottery not found'),
+                    ]
+                )
+            ),
         ]
     )]
     public function show(Lottery $lottery): LotteryResource
@@ -67,19 +119,68 @@ class LotteryController extends Controller
         path: '/api/lotteries/{lottery}/register',
         tags: ['Lottery'],
         summary: 'Register current user in lottery',
+        description: 'Register the authenticated user for a specific lottery',
         security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(
                 name: 'lottery',
                 in: 'path',
                 required: true,
+                description: 'Lottery ID',
                 schema: new OA\Schema(type: 'integer', example: 1)
             )
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Registered successfully'),
-            new OA\Response(response: 409, description: 'Already registered or invalid state'),
-            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(
+                response: 200,
+                description: 'Registered successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Successfully registered'),
+                        new OA\Property(
+                            property: 'data',
+                            ref: '#/components/schemas/EntryResource'
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'User not authenticated'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 409,
+                description: 'Already registered or invalid state',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'You have already registered for this lottery'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Lottery is not active'),
+                        new OA\Property(property: 'errors', type: 'object'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Bad request',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Lottery capacity has been reached'),
+                    ]
+                )
+            ),
         ]
     )]
     public function register(Request $request, Lottery $lottery): JsonResponse
@@ -139,17 +240,38 @@ class LotteryController extends Controller
         path: '/api/lotteries/{lottery}/my-status',
         tags: ['Lottery'],
         summary: 'Get current user lottery status',
+        description: 'Get the authenticated user\'s registration status and winner status for a lottery',
         security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(
                 name: 'lottery',
                 in: 'path',
                 required: true,
+                description: 'Lottery ID',
                 schema: new OA\Schema(type: 'integer', example: 1)
             )
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Status returned')
+            new OA\Response(
+                response: 200,
+                description: 'Status returned',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            ref: '#/components/schemas/MyStatusResource'
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated'
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Lottery not found'
+            ),
         ]
     )]
     public function myStatus(Request $request, Lottery $lottery): MyStatusResource
@@ -177,9 +299,48 @@ class LotteryController extends Controller
         path: '/api/my/lotteries',
         tags: ['Lottery'],
         summary: 'List current user lottery participations',
+        description: 'Get paginated list of lotteries the authenticated user has participated in',
         security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer', example: 1)
+            ),
+            new OA\Parameter(
+                name: 'per_page',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer', example: 15, minimum: 1, maximum: 100)
+            ),
+        ],
         responses: [
-            new OA\Response(response: 200, description: 'My lotteries')
+            new OA\Response(
+                response: 200,
+                description: 'My lotteries',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/EntryResource')
+                        ),
+                        new OA\Property(
+                            property: 'links',
+                            type: 'object'
+                        ),
+                        new OA\Property(
+                            property: 'meta',
+                            type: 'object'
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated'
+            ),
         ]
     )]
     public function myLotteries(Request $request): AnonymousResourceCollection
@@ -195,4 +356,3 @@ class LotteryController extends Controller
         return EntryResource::collection($entries);
     }
 }
-
