@@ -214,12 +214,25 @@ Route::middleware(['auth:admin'])->prefix('admin')->group(function () {
     // =========================================== Lotteries ==========================================
 
     Route::prefix('lotteries')->group(function () {
-        Route::get('/', [AdminLotteryController::class, 'index']);
-        Route::get('/{lottery}', [AdminLotteryController::class, 'show']);
-        Route::post('/', [AdminLotteryController::class, 'store']);
-        Route::put('/{lottery}', [AdminLotteryController::class, 'update']);
-        Route::get('/{lottery}/entries', [AdminLotteryController::class, 'entries']);
-        Route::post('/{lottery}/draw', [AdminLotteryController::class, 'draw']);
-        Route::get('/{lottery}/winners', [AdminLotteryController::class, 'winners']);
+        Route::get('/', [AdminLotteryController::class, 'index'])
+            ->middleware('permission:admin.lotteries.view');
+
+        Route::get('/{lottery}', [AdminLotteryController::class, 'show'])
+            ->middleware('permission:admin.lotteries.view');
+
+        Route::post('/', [AdminLotteryController::class, 'store'])
+            ->middleware('permission:admin.lotteries.create');
+
+        Route::put('/{lottery}', [AdminLotteryController::class, 'update'])
+            ->middleware('permission:admin.lotteries.update');
+
+        Route::post('/{lottery}/draw', [AdminLotteryController::class, 'draw'])
+            ->middleware('permission:admin.lotteries.draw');
+
+        Route::get('/{lottery}/entries', [AdminLotteryController::class, 'entries'])
+            ->middleware('permission:admin.lotteries.enteries.view');
+
+        Route::get('/{lottery}/winners', [AdminLotteryController::class, 'winners'])
+            ->middleware('permission:admin.winners.view');
     });
 });

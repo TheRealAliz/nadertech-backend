@@ -47,8 +47,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'admin.lotteries.create',
             'admin.lotteries.update',
             'admin.lotteries.delete',
-            'admin.lotteries.entries.view',
             'admin.lotteries.draw',
+            'admin.lotteries.entries.view',
             'admin.lotteries.winners.view',
 
             // Project Requests
