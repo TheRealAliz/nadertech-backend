@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Exceptions\Lottery;
+namespace App\Exceptions;
 
 use App\Exceptions\BaseException;
 

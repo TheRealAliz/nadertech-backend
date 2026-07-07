@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Exceptions\Lottery\LotteryException;
+use App\Exceptions\LotteryException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Lottery\EntryResource;
 use App\Http\Resources\Lottery\LotteryResource;
