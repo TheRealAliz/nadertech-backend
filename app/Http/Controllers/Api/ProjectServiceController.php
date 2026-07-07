@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\ProjectRequests\ProjectServiceResource;
+use App\Http\Resources\ProjectRequest\ProjectServiceResource;
 use App\Models\ProjectService;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OA;
