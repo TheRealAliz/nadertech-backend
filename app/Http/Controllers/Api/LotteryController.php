@@ -4,11 +4,15 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\Lottery\LotteryException;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Lottery\EntryResource;
+use App\Http\Resources\Lottery\LotteryResource;
+use App\Http\Resources\Lottery\MyStatusResource;
 use App\Models\Lottery;
 use App\Models\LotteryEntry;
 use App\Models\LotteryWinner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use OpenApi\Attributes as OA;
 
@@ -25,17 +29,16 @@ class LotteryController extends Controller
             )
         ]
     )]
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Lottery::query()->latest();
+        $perPage = min($request->integer('per_page', 10), 100);
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->string('status')->toString());
-        }
+        $lotteries = Lottery::query()
+            ->active()
+            ->latest()
+            ->paginate($perPage);
 
-        $lotteries = $query->paginate(15);
-
-        return response()->json($lotteries);
+        return LotteryResource::collection($lotteries);
     }
 
     #[OA\Get(
@@ -55,11 +58,9 @@ class LotteryController extends Controller
             new OA\Response(response: 404, description: 'Lottery not found'),
         ]
     )]
-    public function show(Lottery $lottery): JsonResponse
+    public function show(Lottery $lottery): LotteryResource
     {
-        $lottery->loadCount(['entries', 'winners']);
-
-        return response()->json($lottery);
+        return new LotteryResource($lottery);
     }
 
     #[OA\Post(
@@ -126,9 +127,11 @@ class LotteryController extends Controller
             'registered_at' => now(),
         ]);
 
+        $entry->load(['user', 'lottery']);
+
         return response()->json([
-            'message' => 'ثبت‌نام شما در قرعه‌کشی با موفقیت انجام شد.',
-            'entry' => $entry,
+            'message' => 'Successfully registered',
+            'data' => new EntryResource($entry),
         ]);
     }
 
@@ -149,11 +152,12 @@ class LotteryController extends Controller
             new OA\Response(response: 200, description: 'Status returned')
         ]
     )]
-    public function myStatus(Request $request, Lottery $lottery): JsonResponse
+    public function myStatus(Request $request, Lottery $lottery): MyStatusResource
     {
         $user = $request->user();
 
         $entry = LotteryEntry::query()
+            ->with(['user', 'lottery'])
             ->where('lottery_id', $lottery->id)
             ->where('user_id', $user->id)
             ->first();
@@ -163,11 +167,9 @@ class LotteryController extends Controller
             ->where('user_id', $user->id)
             ->first();
 
-        return response()->json([
-            'registered' => (bool) $entry,
-            'is_winner' => (bool) $winner,
-            'winner_position' => $winner?->position,
+        return new MyStatusResource([
             'entry' => $entry,
+            'winner' => $winner,
         ]);
     }
 
@@ -180,7 +182,7 @@ class LotteryController extends Controller
             new OA\Response(response: 200, description: 'My lotteries')
         ]
     )]
-    public function myLotteries(Request $request): JsonResponse
+    public function myLotteries(Request $request): AnonymousResourceCollection
     {
         $user = $request->user();
 
@@ -190,7 +192,7 @@ class LotteryController extends Controller
             ->latest()
             ->paginate(15);
 
-        return response()->json($entries);
+        return EntryResource::collection($entries);
     }
 }
 
