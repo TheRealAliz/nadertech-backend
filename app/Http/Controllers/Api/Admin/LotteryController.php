@@ -23,11 +23,53 @@ class LotteryController extends Controller
         path: '/api/admin/lotteries',
         tags: ['Admin - Lottery'],
         summary: 'List lotteries',
+        description: 'Get paginated list of all lotteries with optional status filter',
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer', example: 1)
+            ),
+            new OA\Parameter(
+                name: 'per_page',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer', example: 10, minimum: 1, maximum: 100)
+            ),
+            new OA\Parameter(
+                name: 'status',
+                in: 'query',
+                required: false,
+                description: 'Filter by lottery status',
+                schema: new OA\Schema(type: 'string', enum: ['draft', 'active', 'inactive', 'drawn'])
+            ),
+        ],
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'Lotteries list'
-            )
+                description: 'Lotteries list',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/AdminLotteryListResource')
+                        ),
+                        new OA\Property(
+                            property: 'links',
+                            type: 'object'
+                        ),
+                        new OA\Property(
+                            property: 'meta',
+                            type: 'object'
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
         ]
     )]
     public function index(Request $request): AnonymousResourceCollection
@@ -49,17 +91,33 @@ class LotteryController extends Controller
         path: '/api/admin/lotteries/{lottery}',
         tags: ['Admin - Lottery'],
         summary: 'Show lottery details',
+        description: 'Get detailed information about a specific lottery with entries and winners',
+        security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(
                 name: 'lottery',
                 in: 'path',
                 required: true,
+                description: 'Lottery ID',
                 schema: new OA\Schema(type: 'integer', example: 1)
             )
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Lottery details'),
+            new OA\Response(
+                response: 200,
+                description: 'Lottery details',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            ref: '#/components/schemas/AdminLotteryResource'
+                        )
+                    ]
+                )
+            ),
             new OA\Response(response: 404, description: 'Lottery not found'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
         ]
     )]
     public function show(Lottery $lottery): LotteryResource
@@ -73,25 +131,40 @@ class LotteryController extends Controller
         path: '/api/admin/lotteries',
         tags: ['Admin - Lottery'],
         summary: 'Create lottery',
+        description: 'Create a new lottery',
         security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
                 required: ['title', 'winner_count', 'status'],
                 properties: [
-                    new OA\Property(property: 'title', type: 'string', example: 'قرعه کشی تابستان'),
-                    new OA\Property(property: 'description', type: 'string', example: 'قرعه کشی ویژه کاربران'),
-                    new OA\Property(property: 'starts_at', type: 'string', format: 'date-time', example: '2026-06-08T10:00:00+03:30'),
-                    new OA\Property(property: 'ends_at', type: 'string', format: 'date-time', example: '2026-06-15T23:59:59+03:30'),
-                    new OA\Property(property: 'capacity', type: 'integer', example: 1000, nullable: true),
-                    new OA\Property(property: 'winner_count', type: 'integer', example: 3),
-                    new OA\Property(property: 'status', type: 'string', example: 'active'),
+                    new OA\Property(property: 'title', type: 'string', maxLength: 255, example: 'قرعه کشی تابستان'),
+                    new OA\Property(property: 'description', type: 'string', nullable: true, example: 'قرعه کشی ویژه کاربران فعال'),
+                    new OA\Property(property: 'starts_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-08T10:00:00+03:30'),
+                    new OA\Property(property: 'ends_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-15T23:59:59+03:30'),
+                    new OA\Property(property: 'capacity', type: 'integer', nullable: true, example: 1000, minimum: 1),
+                    new OA\Property(property: 'winner_count', type: 'integer', example: 3, minimum: 1),
+                    new OA\Property(property: 'status', type: 'string', enum: ['draft', 'active', 'inactive'], example: 'active'),
                 ]
             )
         ),
         responses: [
-            new OA\Response(response: 201, description: 'Lottery created'),
+            new OA\Response(
+                response: 201,
+                description: 'Lottery created',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'قرعه‌کشی با موفقیت ایجاد شد.'),
+                        new OA\Property(
+                            property: 'data',
+                            ref: '#/components/schemas/AdminLotteryResource'
+                        )
+                    ]
+                )
+            ),
             new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
         ]
     )]
     public function store(StoreLotteryRequest $request): JsonResponse
@@ -110,12 +183,14 @@ class LotteryController extends Controller
         path: '/api/admin/lotteries/{lottery}',
         tags: ['Admin - Lottery'],
         summary: 'Update lottery',
+        description: 'Update an existing lottery',
         security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(
                 name: 'lottery',
                 in: 'path',
                 required: true,
+                description: 'Lottery ID',
                 schema: new OA\Schema(type: 'integer', example: 1)
             )
         ],
@@ -123,19 +198,34 @@ class LotteryController extends Controller
             required: true,
             content: new OA\JsonContent(
                 properties: [
-                    new OA\Property(property: 'title', type: 'string', example: 'قرعه کشی جدید'),
-                    new OA\Property(property: 'description', type: 'string'),
-                    new OA\Property(property: 'starts_at', type: 'string', format: 'date-time'),
-                    new OA\Property(property: 'ends_at', type: 'string', format: 'date-time'),
-                    new OA\Property(property: 'capacity', type: 'integer', nullable: true),
-                    new OA\Property(property: 'winner_count', type: 'integer', example: 1),
-                    new OA\Property(property: 'status', type: 'string', example: 'active'),
+                    new OA\Property(property: 'title', type: 'string', maxLength: 255, example: 'قرعه کشی جدید'),
+                    new OA\Property(property: 'description', type: 'string', nullable: true, example: 'توضیحات به‌روز شده'),
+                    new OA\Property(property: 'starts_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-08T10:00:00+03:30'),
+                    new OA\Property(property: 'ends_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-15T23:59:59+03:30'),
+                    new OA\Property(property: 'capacity', type: 'integer', nullable: true, example: 1000, minimum: 1),
+                    new OA\Property(property: 'winner_count', type: 'integer', example: 1, minimum: 1),
+                    new OA\Property(property: 'status', type: 'string', enum: ['draft', 'active', 'inactive'], example: 'active'),
                 ]
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: 'Lottery updated'),
+            new OA\Response(
+                response: 200,
+                description: 'Lottery updated',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'قرعه‌کشی با موفقیت ویرایش شد.'),
+                        new OA\Property(
+                            property: 'data',
+                            ref: '#/components/schemas/AdminLotteryResource'
+                        )
+                    ]
+                )
+            ),
             new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Lottery not found'),
         ]
     )]
     public function update(UpdateLotteryRequest $request, Lottery $lottery): JsonResponse
@@ -154,17 +244,67 @@ class LotteryController extends Controller
         path: '/api/admin/lotteries/{lottery}/entries',
         tags: ['Admin - Lottery'],
         summary: 'List lottery entries',
+        description: 'Get paginated list of all entries for a specific lottery',
         security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(
                 name: 'lottery',
                 in: 'path',
                 required: true,
+                description: 'Lottery ID',
                 schema: new OA\Schema(type: 'integer', example: 1)
-            )
+            ),
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer', example: 1)
+            ),
+            new OA\Parameter(
+                name: 'per_page',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer', example: 50, minimum: 1, maximum: 100)
+            ),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Entries list')
+            new OA\Response(
+                response: 200,
+                description: 'Entries list',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'array',
+                            items: new OA\Items(
+                                properties: [
+                                    new OA\Property(property: 'id', type: 'integer'),
+                                    new OA\Property(property: 'lottery_id', type: 'integer'),
+                                    new OA\Property(property: 'user_id', type: 'integer'),
+                                    new OA\Property(property: 'registered_at', type: 'string', format: 'date-time'),
+                                    new OA\Property(
+                                        property: 'user',
+                                        ref: '#/components/schemas/UserResource'
+                                    ),
+                                    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+                                    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+                                ]
+                            )
+                        ),
+                        new OA\Property(
+                            property: 'links',
+                            type: 'object'
+                        ),
+                        new OA\Property(
+                            property: 'meta',
+                            type: 'object'
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Lottery not found'),
         ]
     )]
     public function entries(Lottery $lottery): JsonResponse
@@ -182,17 +322,47 @@ class LotteryController extends Controller
         path: '/api/admin/lotteries/{lottery}/winners',
         tags: ['Admin - Lottery'],
         summary: 'List lottery winners',
+        description: 'Get list of all winners for a specific lottery ordered by position',
         security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(
                 name: 'lottery',
                 in: 'path',
                 required: true,
+                description: 'Lottery ID',
                 schema: new OA\Schema(type: 'integer', example: 1)
             )
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Winners list')
+            new OA\Response(
+                response: 200,
+                description: 'Winners list',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'array',
+                            items: new OA\Items(
+                                properties: [
+                                    new OA\Property(property: 'id', type: 'integer'),
+                                    new OA\Property(property: 'lottery_id', type: 'integer'),
+                                    new OA\Property(property: 'user_id', type: 'integer'),
+                                    new OA\Property(property: 'position', type: 'integer'),
+                                    new OA\Property(
+                                        property: 'user',
+                                        ref: '#/components/schemas/UserResource'
+                                    ),
+                                    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+                                    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+                                ]
+                            )
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Lottery not found'),
         ]
     )]
     public function winners(Lottery $lottery): JsonResponse
@@ -206,23 +376,105 @@ class LotteryController extends Controller
         return response()->json($winners);
     }
 
-
     #[OA\Post(
         path: '/api/admin/lotteries/{lottery}/draw',
         tags: ['Admin - Lottery'],
         summary: 'Draw lottery winners',
+        description: 'Select and save winners for a lottery. Only available for active lotteries after end date.',
         security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(
                 name: 'lottery',
                 in: 'path',
                 required: true,
+                description: 'Lottery ID',
                 schema: new OA\Schema(type: 'integer', example: 1)
             )
         ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['winners'],
+                properties: [
+                    new OA\Property(
+                        property: 'winners',
+                        type: 'array',
+                        description: 'Array of winners with user_id and position',
+                        minItems: 1,
+                        items: new OA\Items(
+                            properties: [
+                                new OA\Property(property: 'user_id', type: 'integer', example: 5),
+                                new OA\Property(property: 'position', type: 'integer', example: 1),
+                            ]
+                        ),
+                        example: [
+                            ['user_id' => 5, 'position' => 1],
+                            ['user_id' => 12, 'position' => 2],
+                            ['user_id' => 8, 'position' => 3],
+                        ]
+                    )
+                ]
+            )
+        ),
         responses: [
-            new OA\Response(response: 200, description: 'Lottery drawn'),
-            new OA\Response(response: 409, description: 'Invalid lottery state'),
+            new OA\Response(
+                response: 200,
+                description: 'Lottery drawn successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Lottery winners have been saved successfully.'),
+                        new OA\Property(
+                            property: 'data',
+                            type: 'array',
+                            items: new OA\Items(
+                                properties: [
+                                    new OA\Property(property: 'id', type: 'integer'),
+                                    new OA\Property(property: 'lottery_id', type: 'integer'),
+                                    new OA\Property(property: 'user_id', type: 'integer'),
+                                    new OA\Property(property: 'position', type: 'integer'),
+                                    new OA\Property(
+                                        property: 'user',
+                                        ref: '#/components/schemas/UserResource'
+                                    ),
+                                    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+                                    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+                                ]
+                            )
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 409,
+                description: 'Conflict - Invalid lottery state',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Lottery has already been drawn'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Bad request',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Winners list is required'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string'),
+                        new OA\Property(property: 'errors', type: 'object'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Lottery not found'),
         ]
     )]
     public function draw(Request $request, Lottery $lottery): JsonResponse
