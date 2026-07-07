@@ -25,6 +25,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'admin.users.view',
             'admin.users.view.single',
 
+            // Admins
+            'admin.admins.roles.view',
+            'admin.admins.roles.update',
+            'admin.admins.roles.permissions.view',
+            'admin.admins.roles.permissions.update',
+
             // Banners
             'admin.banners.show',
             'admin.banners.create',

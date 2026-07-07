@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\AdminRoleController;
 use App\Http\Controllers\Api\Admin\ArticleController as AdminArticleController;
 use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Api\Admin\BannerController as AdminBannerController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\Api\LotteryController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\Admin\ProjectRequestController as AdminProjectRequestController;
 use App\Http\Controllers\Api\Admin\ResumeController as AdminResumeController;
+use App\Http\Controllers\Api\Admin\RolePermissionController;
 use App\Http\Controllers\Api\ProjectRequestController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\ArticleController;
@@ -121,6 +123,24 @@ Route::middleware(['auth:admin'])->prefix('admin')->group(function () {
 
         Route::get('/{user}', [UserController::class, 'show'])
             ->middleware('permission:admin.users.view.single');
+    });
+
+    // ============================================ Admins ============================================
+
+    Route::prefix('admins/{admin}/roles')->group(function () {
+        Route::get('/', [AdminRoleController::class, 'show'])
+            ->middleware('permission:admin.admins.roles.view');
+
+        Route::put('/', [AdminRoleController::class, 'sync'])
+            ->middleware('permission:admin.admins.roles.update');
+    });
+
+    Route::prefix('roles/{role}/permissions')->group(function () {
+        Route::get('/', [RolePermissionController::class, 'show'])
+            ->middleware('permission:admin.admins.roles.permissions.view');
+
+        Route::put('/', [RolePermissionController::class, 'sync'])
+            ->middleware('permission:admin.admins.roles.permissions.update');
     });
 
     // ======================================= Home Page Banners ======================================
