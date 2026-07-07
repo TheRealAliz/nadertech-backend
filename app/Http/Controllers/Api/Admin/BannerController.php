@@ -247,7 +247,7 @@ class BannerController extends Controller
 
         $validated['image'] = $this->imageUploadService->upload(
             $request->file('image'),
-            'banners'
+            'images/banners'
         );
 
         $banner = Banner::create($validated);
@@ -471,7 +471,7 @@ class BannerController extends Controller
 
             $validated['image'] = $this->imageUploadService->upload(
                 $request->file('image'),
-                'banners'
+                'images/banners'
             );
         }
 
@@ -592,7 +592,7 @@ class BannerController extends Controller
 
         $validated['image'] = $this->imageUploadService->upload(
             $request->file('image'),
-            'banners'
+            'images/banners'
         );
 
         $banner->update($validated);
