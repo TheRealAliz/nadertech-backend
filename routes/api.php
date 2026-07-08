@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Admin\AdminRoleController;
 use App\Http\Controllers\Api\Admin\ArticleController as AdminArticleController;
 use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Api\Admin\BannerController as AdminBannerController;
+use App\Http\Controllers\Api\Admin\FaqController as AdminFaqController;
 use App\Http\Controllers\Api\Admin\LotteryController as AdminLotteryController;
 use App\Http\Controllers\Api\ProjectServiceController;
 use App\Http\Controllers\Api\PageItemController;
@@ -254,5 +255,21 @@ Route::middleware(['auth:admin'])->prefix('admin')->group(function () {
 
         Route::get('/{lottery}/winners', [AdminLotteryController::class, 'winners'])
             ->middleware('permission:admin.winners.view');
+    });
+
+    // ============================================= FAQs =============================================
+
+    Route::prefix('faqs')->group(function () {
+        Route::get('/', [AdminFaqController::class, 'index'])
+            ->middleware('permission:admin.faqs.view');
+
+        Route::get('/{faq}', [AdminFaqController::class, 'show'])
+            ->middleware('permission:admin.faqs.view');
+
+        Route::post('/', [AdminFaqController::class, 'store'])
+            ->middleware('permission:admin.faqs.create');
+
+        Route::put('/{faq}', [AdminFaqController::class, 'update'])
+            ->middleware('permission:admin.faqs.update');
     });
 });

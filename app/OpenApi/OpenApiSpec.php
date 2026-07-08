@@ -365,6 +365,20 @@ use OpenApi\Attributes as OA;
     ],
     type: 'object'
 )]
+#[OA\Schema(
+    schema: 'AdminFaqResource',
+    title: 'Admin FAQ Resource',
+    description: 'Admin FAQ resource representation',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'question', type: 'string', example: 'چگونه می‌توانم ثبت‌نام کنم؟'),
+        new OA\Property(property: 'answer', type: 'string', example: 'برای ثبت‌نام، لطفاً به صفحه ثبت‌نام مراجعه کنید و فرم را تکمیل نمایید.'),
+        new OA\Property(property: 'sort_order', type: 'integer', nullable: true, example: 1),
+        new OA\Property(property: 'is_active', type: 'boolean', example: true),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2026-06-25T10:00:00.000000Z'),
+    ],
+    type: 'object'
+)]
 class OpenApiSpec
 {
 }
