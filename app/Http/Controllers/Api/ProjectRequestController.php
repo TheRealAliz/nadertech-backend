@@ -12,7 +12,7 @@ use OpenApi\Attributes as OA;
 class ProjectRequestController extends Controller
 {
     #[OA\Post(
-        path: '/api/project-requests',
+        path: '/api/requests',
         tags: ['Project Requests'],
         summary: 'Submit a new project request',
         description: 'Creates a new project request. User ID is optional (if authenticated, it will be linked automatically).',

@@ -12,7 +12,7 @@ use OpenApi\Attributes as OA;
 class ProjectRequestController extends Controller
 {
     #[OA\Get(
-        path: '/api/admin/project-requests',
+        path: '/api/admin/requests',
         tags: ['Admin - Project Requests'],
         summary: 'Get list of project requests',
         description: 'Returns paginated list of all project requests with their related services',
@@ -87,7 +87,7 @@ class ProjectRequestController extends Controller
     }
 
     #[OA\Get(
-        path: '/api/admin/project-requests/{projectRequest}',
+        path: '/api/admin/requests/{projectRequest}',
         tags: ['Admin - Project Requests'],
         summary: 'Get single project request',
         description: 'Returns detailed information about a specific project request with its related service',
