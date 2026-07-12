@@ -20,7 +20,7 @@ class UpdateArticleRequest extends FormRequest
                 Rule::unique('articles', 'slug')->ignore($this->article->id),
             ],
             'content' => 'required|string',
-            'thumbnail' => 'nullable|string|max:255',
+            'thumbnail' => 'nullable|image|max:2048',
             'thumbnail_alt' => 'nullable|string|max:255',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string',
