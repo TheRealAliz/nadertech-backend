@@ -32,7 +32,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'admin.admins.roles.permissions.update',
 
             // Banners
-            'admin.banners.show',
+            'admin.banners.view',
             'admin.banners.create',
             'admin.banners.update',
             'admin.banners.delete',
@@ -65,6 +65,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'admin.resumes.create',
             'admin.resumes.update',
             'admin.resumes.delete',
+
+            // FAQs
+            'admin.faqs.view',
+            'admin.faqs.create',
+            'admin.faqs.update',
+            'admin.faqs.delete',
         ];
 
         foreach ($permissions as $permission) {
