@@ -15,7 +15,7 @@ class ArticleResource extends JsonResource
             'title' => $this->title,
             'slug' => $this->slug,
             'content' => $this->content,
-            'thumbnail' => $this->thumbnail ? Storage::disk($this->thumbnail) : null,
+            'thumbnail' => $this->thumbnail ? asset('storage/' . $this->thumbnail) : null,
             'thumbnail_alt' => $this->thumbnail_alt,
             'views_count' => $this->views_count,
             'published_at' => $this->published_at,
