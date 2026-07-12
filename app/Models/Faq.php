@@ -27,6 +27,6 @@ class Faq extends Model
 
     public function scopeOrdered(Builder $query): Builder
     {
-        return $query->orderBy('order');
+        return $query->orderBy('sort_order');
     }
 }
