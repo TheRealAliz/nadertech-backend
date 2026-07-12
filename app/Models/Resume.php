@@ -34,7 +34,7 @@ class Resume extends Model
 
     public function firstImage()
     {
-        return $this->hasMany(ResumeImage::class)->orderBy('sort_order')->first();
+        return $this->hasOne(ResumeImage::class)->orderBy('sort_order')->ofMany('sort_order', 'min');
     }
 
     public function review(): HasOne
