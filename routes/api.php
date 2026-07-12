@@ -64,7 +64,7 @@ Route::prefix('services')->group(function () {
 // ======================================== Project Requests ========================================
 
 Route::prefix('requests')->group(function () {
-    Route::get('/store', [ProjectRequestController::class, 'store']);
+    Route::post('/', [ProjectRequestController::class, 'store']);
 });
 
 // ============================================ Lotteries ===========================================
@@ -90,6 +90,7 @@ Route::prefix('banners')->group(function () {
 
 Route::prefix('articles')->group(function () {
     Route::get('/', [ArticleController::class, 'index']);
+    Route::get('/{article:slug}', [ArticleController::class, 'show']);
 });
 
 // ============================================ Page Items ============================================
@@ -212,7 +213,7 @@ Route::middleware(['auth:admin'])->prefix('admin')->group(function () {
 
     // ============================================ Resumes ===========================================
 
-    Route::prefix('resume')->group(function () {
+    Route::prefix('resumes')->group(function () {
         Route::get('/', [AdminResumeController::class, 'index'])
             ->middleware('permission:admin.resumes.view');
 
@@ -271,5 +272,8 @@ Route::middleware(['auth:admin'])->prefix('admin')->group(function () {
 
         Route::put('/{faq}', [AdminFaqController::class, 'update'])
             ->middleware('permission:admin.faqs.update');
+
+        Route::delete('/{faq}', [AdminFaqController::class, 'destroy'])
+            ->middleware('permission:admin.faqs.delete');
     });
 });
