@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\ProjectRequestController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\ArticleController;
 use App\Http\Controllers\Api\BannerController;
+use App\Http\Controllers\Api\ResumeController;
 
 // ========================================== Authenticate ==========================================
 
@@ -67,14 +68,22 @@ Route::prefix('requests')->group(function () {
     Route::post('/', [ProjectRequestController::class, 'store']);
 });
 
+// ============================================ Resumes =============================================
+
+Route::prefix('resumes')->group(function () {
+    Route::get('/', [ResumeController::class, 'index']);
+    Route::get('/{resume:slug}', [ResumeController::class, 'show']);
+});
+
 // ============================================ Lotteries ===========================================
 
-Route::prefix('lotteris')->group(function () {
+Route::prefix('lotteries')->group(function () {
     Route::get('/', [LotteryController::class, 'index']);
     Route::get('/{lottery}', [LotteryController::class, 'show']);
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{lottery}/register', [LotteryController::class, 'register']);
+        Route::post('/{lottery}/login', [LotteryController::class, 'login']);
         Route::get('/{lottery}/my-status', [LotteryController::class, 'myStatus']);
         Route::get('/me', [LotteryController::class, 'myLotteries']);
     });
@@ -252,10 +261,19 @@ Route::middleware(['auth:admin'])->prefix('admin')->group(function () {
             ->middleware('permission:admin.lotteries.draw');
 
         Route::get('/{lottery}/entries', [AdminLotteryController::class, 'entries'])
-            ->middleware('permission:admin.lotteries.enteries.view');
+            ->middleware('permission:admin.lotteries.entries.view');
 
         Route::get('/{lottery}/winners', [AdminLotteryController::class, 'winners'])
-            ->middleware('permission:admin.winners.view');
+            ->middleware('permission:admin.lotteries.winners.view');
+    });
+
+    // ========================================== Page Items ==========================================
+
+    Route::prefix('page')->group(function () {
+        Route::get('/{page}', [PageItemController::class, 'index']);
+        Route::get('/{page}/{key}', [PageItemController::class, 'show']);
+        Route::post('/', [PageItemController::class, 'updateOrCreate']);
+        Route::delete('/{pageItem}', [PageItemController::class, 'destroy']);
     });
 
     // ============================================= FAQs =============================================

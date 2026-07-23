@@ -124,7 +124,6 @@ class ResumeController extends Controller
             }
 
             $resume->load(['review', 'images', 'category']);
-
             return response()->json([
                 'message' => 'Resume created successfully',
                 'data' => new ResumeResource($resume),

@@ -82,7 +82,7 @@ class LotteryController extends Controller
             $lotteries->where('status', $request->string('status')->toString());
         }
 
-        $lotteries->paginate($perPage);
+        $lotteries = $lotteries->paginate($perPage);
 
         return LotteryListResource::collection($lotteries);
     }
@@ -143,6 +143,7 @@ class LotteryController extends Controller
                     new OA\Property(property: 'starts_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-08T10:00:00+03:30'),
                     new OA\Property(property: 'ends_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-15T23:59:59+03:30'),
                     new OA\Property(property: 'capacity', type: 'integer', nullable: true, example: 1000, minimum: 1),
+                    new OA\Property(property: 'update', type: 'integer', nullable: false, example: 10000, minimum: 1),
                     new OA\Property(property: 'winner_count', type: 'integer', example: 3, minimum: 1),
                     new OA\Property(property: 'status', type: 'string', enum: ['draft', 'active', 'inactive'], example: 'active'),
                 ]
@@ -203,6 +204,7 @@ class LotteryController extends Controller
                     new OA\Property(property: 'starts_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-08T10:00:00+03:30'),
                     new OA\Property(property: 'ends_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-15T23:59:59+03:30'),
                     new OA\Property(property: 'capacity', type: 'integer', nullable: true, example: 1000, minimum: 1),
+                    new OA\Property(property: 'update', type: 'integer', nullable: false, example: 10000, minimum: 1),
                     new OA\Property(property: 'winner_count', type: 'integer', example: 1, minimum: 1),
                     new OA\Property(property: 'status', type: 'string', enum: ['draft', 'active', 'inactive'], example: 'active'),
                 ]

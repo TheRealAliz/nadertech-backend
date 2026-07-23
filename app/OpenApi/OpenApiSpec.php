@@ -67,6 +67,7 @@ use OpenApi\Attributes as OA;
     title: "Page Item Resource",
     description: "Page item resource representation",
     properties: [
+        new OA\Property(property: "id", type: "integer", example: "1"),
         new OA\Property(property: "key", type: "string", example: "title", description: "Item key identifier"),
         new OA\Property(property: "value", type: "string", example: "نادر تکنولوژی فقط یک نام نیست؛ یک نگاه است.", description: "Item content value"),
         new OA\Property(property: "type", type: "string", enum: ["text", "html", "image_path", "json", "number", "boolean"], example: "text", description: "Content type"),
@@ -278,6 +279,80 @@ use OpenApi\Attributes as OA;
     type: 'object'
 )]
 #[OA\Schema(
+    schema: 'PublicResumeListResource',
+    title: 'Public Resume List Resource',
+    description: 'Public resume list resource representation (summary for listing)',
+    properties: [
+        new OA\Property(property: 'title', type: 'string', example: 'طراحی وب‌سایت فروشگاهی'),
+        new OA\Property(property: 'slug', type: 'string', example: 'طراحی-وب‌سایت-فروشگاهی'),
+        new OA\Property(
+            property: 'cover',
+            ref: '#/components/schemas/PublicResumeImageResource',
+            nullable: true,
+            description: 'First image of the resume as cover'
+        ),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2026-06-25T10:00:00.000000Z'),
+    ],
+    type: 'object'
+)]
+#[OA\Schema(
+    schema: 'PublicResumeImageResource',
+    title: 'Public Resume Image Resource',
+    description: 'Public resume image resource representation',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'image', type: 'string', example: 'http://localhost/storage/resumes/image-1.jpg'),
+        new OA\Property(property: 'sort_order', type: 'integer', example: 0),
+        new OA\Property(property: 'alt', type: 'string', nullable: true, example: 'تصویر پروژه'),
+    ],
+    type: 'object'
+)]
+#[OA\Schema(
+    schema: 'PublicResumeReviewResource',
+    title: 'Public Resume Review Resource',
+    description: 'Public resume review/customer feedback resource representation',
+    properties: [
+        new OA\Property(property: 'name', type: 'string', example: 'علی احمدی'),
+        new OA\Property(property: 'position', type: 'string', nullable: true, example: 'مدیر عامل'),
+        new OA\Property(property: 'avatar', type: 'string', nullable: true, example: 'http://localhost/storage/resumes/avatar-1.jpg'),
+        new OA\Property(property: 'description', type: 'string', example: 'نظر مشتری درباره پروژه'),
+    ],
+    type: 'object'
+)]
+#[OA\Schema(
+    schema: 'PublicResumeResource',
+    title: 'Public Resume Resource',
+    description: 'Public resume full resource representation with all relationships',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'title', type: 'string', example: 'طراحی وب‌سایت فروشگاهی'),
+        new OA\Property(property: 'slug', type: 'string', example: 'ecommerce-website-design'),
+        new OA\Property(property: 'description', type: 'string', example: 'توضیحات کامل پروژه'),
+        new OA\Property(
+            property: 'category',
+            type: 'string',
+            nullable: true,
+            example: 'وب‌سایت',
+            description: 'Category title'
+        ),
+        new OA\Property(
+            property: 'review',
+            ref: '#/components/schemas/PublicResumeReviewResource',
+            nullable: true,
+            description: 'Customer review'
+        ),
+        new OA\Property(
+            property: 'images',
+            type: 'array',
+            description: 'Resume images',
+            items: new OA\Items(ref: '#/components/schemas/PublicResumeImageResource')
+        ),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2026-06-25T10:00:00.000000Z'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', example: '2026-06-25T10:00:00.000000Z'),
+    ],
+    type: 'object'
+)]
+#[OA\Schema(
     schema: 'AdminLotteryResource',
     title: 'Admin Lottery Resource',
     description: 'Admin lottery resource representation',
@@ -288,6 +363,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'starts_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-08T10:00:00+03:30'),
         new OA\Property(property: 'ends_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-15T23:59:59+03:30'),
         new OA\Property(property: 'capacity', type: 'integer', nullable: true, example: 1000),
+        new OA\Property(property: 'price', type: 'integer', nullable: false, example: 20000),
         new OA\Property(property: 'winner_count', type: 'integer', example: 3),
         new OA\Property(property: 'status', type: 'string', example: 'active'),
         new OA\Property(property: 'drawn_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-15T23:59:59+03:30'),
@@ -322,6 +398,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'starts_at', type: 'string', format: 'date-time', nullable: true),
         new OA\Property(property: 'ends_at', type: 'string', format: 'date-time', nullable: true),
         new OA\Property(property: 'capacity', type: 'integer', nullable: true, example: 100),
+        new OA\Property(property: 'price', type: 'integer', nullable: false, example: 20000),
         new OA\Property(property: 'winner_count', type: 'integer', example: 3),
         new OA\Property(property: 'status', type: 'string', enum: ['active', 'draf', 'drawn', 'closed'], example: 'active'),
         new OA\Property(property: 'drawn_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-15T23:59:59+03:30'),
@@ -345,6 +422,7 @@ use OpenApi\Attributes as OA;
             nullable: true
         ),
         new OA\Property(property: 'registered_at', type: 'string', format: 'date-time'),
+        new OA\Property(property: 'code', type: 'string', format: 'X7M9K2P4R8T1Q6'),
     ],
     type: 'object'
 )]

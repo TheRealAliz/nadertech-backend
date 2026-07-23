@@ -15,6 +15,7 @@ class UpdateLotteryRequest extends FormRequest
             'starts_at' => 'nullable|date',
             'ends_at' => 'nullable|date|after_or_equal:starts_at',
             'capacity' => 'nullable|integer|min:1',
+            'price' => 'sometimes|required|integer|min:0',
             'winner_count' => 'sometimes|required|integer|min:1',
             'status' => 'sometimes|required|in:draft,active,closed,drawn',
         ];

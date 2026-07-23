@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\PageItem\StorePageItemRequest;
 use App\Http\Resources\Page\PageItemResource;
 use App\Models\PageItem;
 use Illuminate\Http\JsonResponse;
@@ -35,15 +36,7 @@ class PageItemController extends Controller
                         new OA\Property(
                             property: 'data',
                             type: 'array',
-                            items: new OA\Items(
-                                properties: [
-                                    new OA\Property(property: 'key', type: 'string', example: 'title', description: 'Item key identifier'),
-                                    new OA\Property(property: 'value', type: 'string', example: 'نادر تکنولوژی فقط یک نام نیست؛ یک نگاه است.', description: 'Item content value'),
-                                    new OA\Property(property: 'type', type: 'string', enum: ['text', 'html', 'image_path', 'json', 'number', 'boolean'], example: 'text', description: 'Content type'),
-                                    new OA\Property(property: 'page', type: 'string', example: 'about', description: 'Page name')
-                                ],
-                                type: 'object'
-                            )
+                            items: new OA\Items(ref: '#/components/schemas/PageItemResource')
                         )
                     ]
                 )
@@ -69,7 +62,7 @@ class PageItemController extends Controller
 
         $items = PageItem::query()
             ->where('page', '=', $page)
-            ->get(['key', 'value', 'type', 'page']);
+            ->get();
 
         return response()->json(
             [
@@ -89,7 +82,7 @@ class PageItemController extends Controller
                 in: 'query',
                 required: true,
                 schema: new OA\Schema(type: 'string'),
-                example: 'about-us',
+                example: 'about',
                 description: 'Page identifier'
             ),
             new OA\Parameter(
@@ -109,19 +102,13 @@ class PageItemController extends Controller
                     properties: [
                         new OA\Property(
                             property: 'data',
+                            type: 'object',
                             properties: [
                                 new OA\Property(
                                     property: 'page_item',
-                                    properties: [
-                                        new OA\Property(property: 'key', type: 'string', example: 'title', description: 'Item key identifier'),
-                                        new OA\Property(property: 'value', type: 'string', example: 'نادر تکنولوژی فقط یک نام نیست؛ یک نگاه است.', description: 'Item content value'),
-                                        new OA\Property(property: 'type', type: 'string', enum: ['text', 'html', 'image_path', 'json', 'number', 'boolean'], example: 'text', description: 'Content type'),
-                                        new OA\Property(property: 'page', type: 'string', example: 'about', description: 'Page name')
-                                    ],
-                                    type: 'object'
+                                    ref: '#/components/schemas/PageItemResource'
                                 )
-                            ],
-                            type: 'object'
+                            ]
                         )
                     ]
                 )
@@ -131,7 +118,7 @@ class PageItemController extends Controller
                 description: 'Validation error - Missing parameters',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'message', type: 'string', example: 'پارامتر صفحه و کلید الزامی می‌باشند.')
+                        new OA\Property(property: 'message', type: 'string', example: 'پارامترهای صفحه و کلید الزامی می‌باشند.')
                     ]
                 )
             ),
@@ -157,7 +144,7 @@ class PageItemController extends Controller
         $item = PageItem::query()
             ->where('page', '=', $page)
             ->where('key', '=', $key)
-            ->first(['key', 'value', 'type', 'page']);
+            ->first();
 
         if (!$item) {
             return response()->json([
@@ -174,51 +161,173 @@ class PageItemController extends Controller
         );
     }
 
-    public function updateSingle(Request $request, string $page, string $key)
+    #[OA\Post(
+        path: '/api/admin/page',
+        tags: ['Admin - Page Items'],
+        summary: 'Create or update a page item',
+        description: 'Creates a new page item or updates an existing one by page and key',
+        security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['page', 'key', 'value', 'type'],
+                properties: [
+                    new OA\Property(
+                        property: 'page',
+                        type: 'string',
+                        description: 'Page identifier',
+                        example: 'about'
+                    ),
+                    new OA\Property(
+                        property: 'key',
+                        type: 'string',
+                        description: 'Item key identifier',
+                        example: 'title'
+                    ),
+                    new OA\Property(
+                        property: 'value',
+                        type: 'string',
+                        description: 'Item content value',
+                        example: 'نادر تکنولوژی فقط یک نام نیست؛ یک نگاه است.'
+                    ),
+                    new OA\Property(
+                        property: 'type',
+                        type: 'string',
+                        enum: ['text', 'html', 'image_path', 'json', 'number', 'boolean'],
+                        description: 'Content type',
+                        example: 'text'
+                    )
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Updated or created successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Updated or created successfully'),
+                        new OA\Property(
+                            property: 'data',
+                            ref: '#/components/schemas/PageItemResource'
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'The page field is required.'),
+                        new OA\Property(
+                            property: 'errors',
+                            type: 'object'
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 403,
+                description: 'Forbidden',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Forbidden.')
+                    ]
+                )
+            )
+        ]
+    )]
+    public function updateOrCreate(StorePageItemRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'value' => 'required'
-        ]);
+        $validated = $request->validated();
 
         $pageItem = PageItem::updateOrCreate(
             [
-                'page' => $page,
-                'key' => $key
+                'page' => $validated['page'],
+                'key' => $validated['key']
             ],
             [
-                'value' => $validated['value']
+                'value' => $validated['value'],
+                'type' => $validated['type']
             ]
         );
 
         return response()->json([
-            'message' => 'updated successfully',
-            'data' => $pageItem
+            'message' => 'Updated or created successfully',
+            'data' => new PageItemResource($pageItem),
         ]);
     }
 
-    public function updateBulk(Request $request, string $page)
+    #[OA\Delete(
+        path: '/api/admin/page/{pageItem}',
+        tags: ['Admin - Page Items'],
+        summary: 'Delete a page item',
+        description: 'Permanently delete a specific page item',
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(
+                name: 'pageItem',
+                in: 'path',
+                required: true,
+                description: 'Page Item ID',
+                schema: new OA\Schema(type: 'integer', example: 1)
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Deleted successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Deleted successfully')
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Page item not found',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Page item not found')
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 403,
+                description: 'Forbidden',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Forbidden.')
+                    ]
+                )
+            )
+        ]
+    )]
+    public function destroy(PageItem $pageItem)
     {
-        $data = $request->all();
-
-        foreach ($data as $key => $value) {
-            PageItem::updateOrCreate(
-                [
-                    'page' => $page,
-                    'key' => $key,
-                ],
-                [
-                    'value' => $value,
-                ]
-            );
-        }
-
-        $pageItems = PageItem::query()
-            ->where('page', '=', $page)
-            ->get(['key', 'value', 'type', 'page']);
+        $pageItem->delete();
 
         return response()->json([
-            'message' => 'updated successfully',
-            'data' => $pageItems
+            'message' => 'Deleted successfully',
         ]);
     }
 }

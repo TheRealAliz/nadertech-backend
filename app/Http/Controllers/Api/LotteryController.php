@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\LotteryException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Lottery\LoginRequest;
 use App\Http\Resources\Lottery\EntryResource;
 use App\Http\Resources\Lottery\LotteryResource;
 use App\Http\Resources\Lottery\MyStatusResource;
@@ -13,6 +14,8 @@ use App\Models\LotteryWinner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 
 class LotteryController extends Controller
@@ -222,10 +225,15 @@ class LotteryController extends Controller
             }
         }
 
+        do {
+            $code = Str::upper(Str::random(14));
+        } while (LotteryEntry::where('code', $code)->exists());
+
         $entry = LotteryEntry::create([
             'lottery_id' => $lottery->id,
             'user_id' => $user->id,
             'registered_at' => now(),
+            'code' => $code,
         ]);
 
         $entry->load(['user', 'lottery']);
@@ -233,6 +241,130 @@ class LotteryController extends Controller
         return response()->json([
             'message' => 'Successfully registered',
             'data' => new EntryResource($entry),
+        ]);
+    }
+
+    #[OA\Post(
+        path: '/api/lotteries/{lottery}/login',
+        tags: ['Lottery'],
+        summary: 'Check lottery entry with code',
+        description: 'Verify a user\'s lottery entry using mobile number and entry code. Returns lottery status and winner information.',
+        parameters: [
+            new OA\Parameter(
+                name: 'lottery',
+                in: 'path',
+                required: true,
+                description: 'Lottery ID',
+                schema: new OA\Schema(type: 'integer', example: 1)
+            )
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['mobile', 'code'],
+                properties: [
+                    new OA\Property(
+                        property: 'mobile',
+                        type: 'string',
+                        description: 'User mobile number',
+                        example: '09123456789'
+                    ),
+                    new OA\Property(
+                        property: 'code',
+                        type: 'string',
+                        description: 'Lottery entry code (14 characters)',
+                        example: 'ABC123DEF456GH'
+                    )
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Entry verified successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(
+                                    property: 'lottery_finished',
+                                    type: 'boolean',
+                                    description: 'Whether the lottery has ended',
+                                    example: true
+                                ),
+                                new OA\Property(
+                                    property: 'is_winner',
+                                    type: 'boolean',
+                                    description: 'Whether the user is a winner',
+                                    example: true
+                                )
+                            ]
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error - Invalid credentials',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'The provided mobile and code are invalid.'),
+                        new OA\Property(
+                            property: 'errors',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(
+                                    property: 'code',
+                                    type: 'array',
+                                    items: new OA\Items(type: 'string'),
+                                    example: ['The provided mobile and code are invalid.']
+                                )
+                            ]
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Lottery not found',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Lottery not found'),
+                    ]
+                )
+            ),
+        ]
+    )]
+    public function login(LoginRequest $request, Lottery $lottery)
+    {
+        $entry = LotteryEntry::query()
+            ->where('lottery_id', $lottery->id)
+            ->where('code', $request->code)
+            ->whereHas('user', function ($query) use ($request) {
+                $query->where('mobile', $request->mobile);
+            })
+            ->first();
+
+        if (!$entry) {
+            throw ValidationException::withMessages([
+                'code' => 'The provided mobile and code are invalid.',
+            ]);
+        }
+
+        $lottery->load('winners');
+
+        $isFinished = $lottery->ends_at && now()->gt($lottery->ends_at);
+
+        $isWinner = $lottery->winners
+            ->contains('user_id', $entry->user_id);
+
+        return response()->json([
+            'data' => [
+                'lottery_finished' => $isFinished,
+                'is_winner' => $isWinner,
+            ],
         ]);
     }
 

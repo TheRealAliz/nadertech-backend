@@ -14,6 +14,7 @@ class EntryResource extends JsonResource
             'user' => UserResource::make($this->whenLoaded('user')),
             'lottery' => LotteryResource::make($this->whenLoaded('lottery')),
             'registered_at' => $this->registered_at,
+            'code' => $this->code,
         ];
     }
 }

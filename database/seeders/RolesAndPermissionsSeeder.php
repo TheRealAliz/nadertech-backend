@@ -50,6 +50,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'admin.articles.update.thumbnail',
 
             // Lotteries
+            'admin.lotteries.view',
             'admin.lotteries.create',
             'admin.lotteries.update',
             'admin.lotteries.delete',
