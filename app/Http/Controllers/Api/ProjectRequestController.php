@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Enums\ProjectRequestStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProjectRequest\StoreProjectRequest;
+use App\Http\Resources\ProjectRequest\ProjectRequestTypeResource;
 use App\Models\ProjectRequest;
+use App\Models\ProjectRequestType;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OA;
 
@@ -22,10 +24,10 @@ class ProjectRequestController extends Controller
                 required: ['service_id', 'name', 'mobile'],
                 properties: [
                     new OA\Property(
-                        property: 'service_id',
+                        property: 'type_id',
                         type: 'integer',
                         example: 1,
-                        description: 'ID of the requested project service (must exist in project_services table)'
+                        description: 'ID of the requested project type (must exist in project_request_types table)'
                     ),
                     new OA\Property(
                         property: 'name',
@@ -78,7 +80,7 @@ class ProjectRequestController extends Controller
                                     property: 'project_request',
                                     properties: [
                                         new OA\Property(property: 'id', type: 'integer', example: 1),
-                                        new OA\Property(property: 'project_service_id', type: 'integer', example: 1),
+                                        new OA\Property(property: 'type_id', type: 'integer', example: 1),
                                         new OA\Property(property: 'user_id', type: 'integer', nullable: true, example: null),
                                         new OA\Property(property: 'name', type: 'string', example: 'علی احمدی'),
                                         new OA\Property(property: 'mobile', type: 'string', example: '09123456789'),
@@ -131,7 +133,7 @@ class ProjectRequestController extends Controller
         $validated = $request->validated();
 
         $projectRequest = ProjectRequest::create([
-            'project_service_id' => $validated['service_id'],
+            'project_request_type_id' => $validated['type_id'],
             'user_id' => $request->user()?->id ?? null,
             'name' => $validated['name'],
             'mobile' => $validated['mobile'],
@@ -146,5 +148,28 @@ class ProjectRequestController extends Controller
                 'project_request' => $projectRequest
             ]
         ], 201);
+    }
+
+    #[OA\Get(
+        path: '/api/requests/types',
+        tags: ['Project Requests'],
+        summary: 'Get project request types',
+        description: 'Retrieve all available project request types',
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Successful response',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: '#/components/schemas/ProjectRequestTypeResource')
+                )
+            )
+        ]
+    )]
+    public function getTypes()
+    {
+        $types = ProjectRequestType::all();
+
+        return ProjectRequestTypeResource::collection($types);
     }
 }

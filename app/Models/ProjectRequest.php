@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ProjectRequest extends Model
 {
     protected $fillable = [
-        'project_service_id',
+        'project_request_type_id',
         'user_id',
         'name',
         'mobile',
@@ -18,9 +18,9 @@ class ProjectRequest extends Model
         'status',
     ];
 
-    public function service(): BelongsTo
+    public function requestType(): BelongsTo
     {
-        return $this->belongsTo(ProjectService::class, 'project_service_id');
+        return $this->belongsTo(ProjectRequestType::class, 'project_request_type_id');
     }
 
     public function scopePending(Builder $query): Builder

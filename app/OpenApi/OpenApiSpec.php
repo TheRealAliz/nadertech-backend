@@ -205,6 +205,17 @@ use OpenApi\Attributes as OA;
     type: 'object'
 )]
 #[OA\Schema(
+    schema: 'ProjectRequestTypeResource',
+    title: 'Project Request Type Resource',
+    description: 'Project request type resource representation',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'title', type: 'string', example: 'پروژه طراحی سایت'),
+        new OA\Property(property: 'description', type: 'string', nullable: true, example: 'یه چیزی'),
+    ],
+    type: 'object'
+)]
+#[OA\Schema(
     schema: 'ResumeResource',
     title: 'Resume Resource',
     description: 'Resume full resource representation with all relationships',

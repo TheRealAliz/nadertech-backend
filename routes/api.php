@@ -66,6 +66,7 @@ Route::prefix('services')->group(function () {
 
 Route::prefix('requests')->group(function () {
     Route::post('/', [ProjectRequestController::class, 'store']);
+    Route::get('/types', [ProjectRequestController::class, 'getTypes']);
 });
 
 // ============================================ Resumes =============================================

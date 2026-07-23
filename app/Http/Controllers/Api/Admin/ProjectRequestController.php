@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\ProjectRequest\ProjectRequestResource;
+use App\Http\Resources\ProjectRequest\ProjectRequestTypeResource;
 use App\Models\ProjectRequest;
+use App\Models\ProjectRequestType;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use OpenApi\Attributes as OA;
@@ -79,7 +81,7 @@ class ProjectRequestController extends Controller
         $perPage = min($request->integer('per_page', 10), 100);
 
         $projectResources = ProjectRequest::query()
-            ->with('service')
+            ->with('requestType')
             ->latestFirst()
             ->paginate($perPage);
 
@@ -122,5 +124,36 @@ class ProjectRequestController extends Controller
     public function show(ProjectRequest $projectRequest): ProjectRequestResource
     {
         return new ProjectRequestResource($projectRequest);
+    }
+
+    #[OA\Get(
+        path: '/api/admin/requests/types',
+        tags: ['Admin - Project Requests'],
+        summary: 'Get project request types',
+        description: 'Returns a list of available project request types',
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Success',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/ProjectRequestTypeResource')
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
+    public function getTypes()
+    {
+        $types = ProjectRequestType::all();
+
+        return ProjectRequestTypeResource::collection($types);
     }
 }

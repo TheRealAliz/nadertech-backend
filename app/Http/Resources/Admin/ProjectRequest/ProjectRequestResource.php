@@ -15,7 +15,7 @@ class ProjectRequestResource extends JsonResource
             'mobile' => $this->mobile,
             'email' => $this->email,
             'description' => $this->description,
-            'service' => $this->service,
+            'type' => $this->requestType,
             'created_at' => $this->created_at?->toDateTimeString(),
             'updated_at' => $this->updated_at?->toDateTimeString(),
         ];
