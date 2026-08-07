@@ -221,6 +221,17 @@ Route::middleware(['auth:admin'])->prefix('admin')->group(function () {
             ->middleware('permission:admin.requests.view');
     });
 
+    // ======================================= Project Services =======================================
+
+    Route::prefix('services')->group(function () {
+        Route::post('/', [ProjectServiceController::class, 'store']);
+        Route::get('/', [ProjectServiceController::class, 'index']);
+        Route::get('/tree', [ProjectServiceController::class, 'tree']);
+        Route::get('/{service}', [ProjectServiceController::class, 'show']);
+        Route::put('/{service}', [ProjectServiceController::class, 'update']);
+        Route::delete('/{service}', [ProjectServiceController::class, 'destroy']);
+    });
+
     // ============================================ Resumes ===========================================
 
     Route::prefix('resumes')->group(function () {

@@ -16,6 +16,7 @@ class Lottery extends Model
         'capacity',
         'price',
         'winner_count',
+        'location',
         'status',
         'drawn_at',
     ];

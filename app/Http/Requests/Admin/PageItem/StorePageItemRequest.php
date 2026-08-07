@@ -11,7 +11,7 @@ class StorePageItemRequest extends FormRequest
     {
         return [
             'key' => 'required|string',
-            'value' => 'required|string',
+            'value' => 'required',
             'type' => 'required|string',
             'page' => 'required|string',
         ];

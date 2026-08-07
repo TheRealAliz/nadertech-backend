@@ -376,6 +376,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'capacity', type: 'integer', nullable: true, example: 1000),
         new OA\Property(property: 'price', type: 'integer', nullable: false, example: 20000),
         new OA\Property(property: 'winner_count', type: 'integer', example: 3),
+        new OA\Property(property: 'location', type: 'string', example: 'خانه‌شان'),
         new OA\Property(property: 'status', type: 'string', example: 'active'),
         new OA\Property(property: 'drawn_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-15T23:59:59+03:30'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2026-06-01T12:00:00Z'),
@@ -393,6 +394,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'starts_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-08T10:00:00+03:30'),
         new OA\Property(property: 'ends_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-15T23:59:59+03:30'),
         new OA\Property(property: 'winner_count', type: 'integer', example: 3),
+        new OA\Property(property: 'location', type: 'string', example: 'خانه‌شان'),
         new OA\Property(property: 'status', type: 'string', example: 'active'),
         new OA\Property(property: 'drawn_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-15T23:59:59+03:30'),
     ],
@@ -411,6 +413,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'capacity', type: 'integer', nullable: true, example: 100),
         new OA\Property(property: 'price', type: 'integer', nullable: false, example: 20000),
         new OA\Property(property: 'winner_count', type: 'integer', example: 3),
+        new OA\Property(property: 'location', type: 'string', example: 'خانه‌شان'),
         new OA\Property(property: 'status', type: 'string', enum: ['active', 'draf', 'drawn', 'closed'], example: 'active'),
         new OA\Property(property: 'drawn_at', type: 'string', format: 'date-time', nullable: true, example: '2026-06-15T23:59:59+03:30'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
@@ -468,6 +471,4 @@ use OpenApi\Attributes as OA;
     ],
     type: 'object'
 )]
-class OpenApiSpec
-{
-}
+class OpenApiSpec {}

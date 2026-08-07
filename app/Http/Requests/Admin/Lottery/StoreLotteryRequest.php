@@ -17,6 +17,7 @@ class StoreLotteryRequest extends FormRequest
             'capacity' => 'nullable|integer|min:1',
             'price' => 'required|integer|min:0',
             'winner_count' => 'required|integer|min:1',
+            'location' => 'required|string|max:300',
             'status' => 'required|in:draft,active,closed,drawn',
         ];
     }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PageItem\StorePageItemRequest;
 use App\Http\Resources\Page\PageItemResource;
 use App\Models\PageItem;
+use App\Services\ImageUploadService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -247,18 +248,38 @@ class PageItemController extends Controller
             )
         ]
     )]
-    public function updateOrCreate(StorePageItemRequest $request): JsonResponse
-    {
+    public function updateOrCreate(
+        StorePageItemRequest $request,
+        ImageUploadService $imageUploadService
+    ): JsonResponse {
         $validated = $request->validated();
+
+        $pageItem = PageItem::where([
+            'page' => $validated['page'],
+            'key' => $validated['key'],
+        ])->first();
+
+        if ($validated['type'] === 'image_path' && $request->hasFile('value')) {
+            $validated['value'] = $imageUploadService->replace(
+                $pageItem?->value,
+                $request->file('value'),
+                'page-items'
+            );
+        } elseif ($validated['type'] === 'json') {
+            $validated['value'] = json_encode(
+                $validated['value'],
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+            );
+        }
 
         $pageItem = PageItem::updateOrCreate(
             [
                 'page' => $validated['page'],
-                'key' => $validated['key']
+                'key' => $validated['key'],
             ],
             [
                 'value' => $validated['value'],
-                'type' => $validated['type']
+                'type' => $validated['type'],
             ]
         );
 

@@ -17,6 +17,7 @@ class UpdateLotteryRequest extends FormRequest
             'capacity' => 'nullable|integer|min:1',
             'price' => 'sometimes|required|integer|min:0',
             'winner_count' => 'sometimes|required|integer|min:1',
+            'location' => 'required|string|max:300',
             'status' => 'sometimes|required|in:draft,active,closed,drawn',
         ];
     }

@@ -17,6 +17,7 @@ class LotteryListResource extends JsonResource
             'ends_at' => $this->ends_at,
             'capacity' => $this->capacity,
             'winner_count' => $this->winner_count,
+            'location' => $this->location,
             'status' => $this->status,
             'drawn_at' => $this->drawn_at,
             'created_at' => $this->created_at,
