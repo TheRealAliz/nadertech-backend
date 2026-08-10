@@ -117,6 +117,12 @@ Route::prefix('faqs')->group(function () {
     Route::get('/{faq}', [FaqController::class, 'show']);
 });
 
+// =============================================== FAQs ===============================================
+
+Route::get('/terms', function () {
+    return response()->json(config('terms'));
+});
+
 // ============================================== Admin ===============================================
 
 Route::middleware(['auth:admin'])->prefix('admin')->group(function () {
@@ -215,6 +221,9 @@ Route::middleware(['auth:admin'])->prefix('admin')->group(function () {
 
     Route::prefix('requests')->group(function () {
         Route::get('/', [AdminProjectRequestController::class, 'index'])
+            ->middleware('permission:admin.requests.view');
+
+        Route::get('/types', [AdminProjectRequestController::class, 'getTypes'])
             ->middleware('permission:admin.requests.view');
 
         Route::get('/{request}', [AdminProjectRequestController::class, 'show'])

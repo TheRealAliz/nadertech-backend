@@ -28,7 +28,14 @@ class ResumeController extends Controller
                 name: 'per_page',
                 in: 'query',
                 required: false,
-                schema: new OA\Schema(type: 'integer', example: 6, minimum: 1, maximum: 50)
+                schema: new OA\Schema(type: 'integer', example: 6, minimum: 1, maximum: 100)
+            ),
+            new OA\Parameter(
+                name: 'category_id',
+                in: 'query',
+                required: false,
+                description: 'Filter resumes by category ID',
+                schema: new OA\Schema(type: 'integer', example: 1)
             ),
         ],
         responses: [
@@ -78,10 +85,17 @@ class ResumeController extends Controller
     )]
     public function index(Request $request): AnonymousResourceCollection
     {
+        $perPage = min($request->integer('per_page', 6), 100);
+        $categoryId = $request->integer('category_id');
+
         $resumes = Resume::query()
             ->with('firstImage')
+            ->when($categoryId, function ($query) use ($categoryId) {
+                $query->where('category_id', $categoryId);
+            })
+            ->published()
             ->latest()
-            ->paginate(6);
+            ->paginate($perPage);
 
         return ResumeListResource::collection($resumes);
     }

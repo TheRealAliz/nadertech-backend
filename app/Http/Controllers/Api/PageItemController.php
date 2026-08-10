@@ -170,36 +170,49 @@ class PageItemController extends Controller
         security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(
-                required: ['page', 'key', 'value', 'type'],
-                properties: [
-                    new OA\Property(
-                        property: 'page',
-                        type: 'string',
-                        description: 'Page identifier',
-                        example: 'about'
-                    ),
-                    new OA\Property(
-                        property: 'key',
-                        type: 'string',
-                        description: 'Item key identifier',
-                        example: 'title'
-                    ),
-                    new OA\Property(
-                        property: 'value',
-                        type: 'string',
-                        description: 'Item content value',
-                        example: 'نادر تکنولوژی فقط یک نام نیست؛ یک نگاه است.'
-                    ),
-                    new OA\Property(
-                        property: 'type',
-                        type: 'string',
-                        enum: ['text', 'html', 'image_path', 'json', 'number', 'boolean'],
-                        description: 'Content type',
-                        example: 'text'
+            content: [
+                new OA\MediaType(
+                    mediaType: 'multipart/form-data',
+                    schema: new OA\Schema(
+                        required: ['page', 'key', 'value', 'type'],
+                        properties: [
+                            new OA\Property(
+                                property: 'page',
+                                type: 'string',
+                                description: 'Page identifier',
+                                example: 'about'
+                            ),
+                            new OA\Property(
+                                property: 'key',
+                                type: 'string',
+                                description: 'Item key identifier',
+                                example: 'title'
+                            ),
+                            new OA\Property(
+                                property: 'value',
+                                description: 'Text value or image file depending on type',
+                                oneOf: [
+                                    new OA\Schema(
+                                        type: 'string',
+                                        example: 'نادر تکنولوژی فقط یک نام نیست؛ یک نگاه است.'
+                                    ),
+                                    new OA\Schema(
+                                        type: 'string',
+                                        format: 'binary'
+                                    )
+                                ]
+                            ),
+                            new OA\Property(
+                                property: 'type',
+                                type: 'string',
+                                enum: ['text', 'html', 'image', 'json', 'number', 'boolean'],
+                                description: 'Content type',
+                                example: 'text'
+                            )
+                        ]
                     )
-                ]
-            )
+                )
+            ]
         ),
         responses: [
             new OA\Response(

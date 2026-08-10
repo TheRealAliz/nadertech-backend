@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin\PageItem;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StorePageItemRequest extends FormRequest
 {
