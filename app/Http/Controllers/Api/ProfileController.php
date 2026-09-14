@@ -47,13 +47,9 @@ class ProfileController extends Controller
             ),
         ]
     )]
-    public function show(Request $request): JsonResponse
+    public function show(Request $request): UserResource
     {
-        return response()->json([
-            'data' => [
-                'user' => new UserResource($request->user()),
-            ],
-        ]);
+        return new UserResource($request->user());
     }
 
     #[OA\Put(
@@ -119,9 +115,7 @@ class ProfileController extends Controller
 
         return response()->json([
             'message' => 'اطلاعات با موفقیت به‌روزرسانی شد.',
-            'data' => [
-                'user' => new UserResource($user->fresh()),
-            ],
+            'data' => new UserResource($user->fresh()),
         ]);
     }
 
@@ -207,7 +201,7 @@ class ProfileController extends Controller
             }
         }
 
-        $path = $request->file('avatar')->store('avatars', 'public');
+        $path = $request->file('avatar')->store('images/avatars', 'public');
         $user->update(['avatar' => $path]);
 
         return response()->json([

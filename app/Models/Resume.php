@@ -11,8 +11,10 @@ class Resume extends Model
 {
     protected $fillable = [
         'title',
+        'title_en',
         'slug',
         'description',
+        'description_en',
         'is_published',
         'category_id',
         'review_id',
@@ -34,7 +36,7 @@ class Resume extends Model
 
     public function firstImage()
     {
-        return $this->hasMany(ResumeImage::class)->orderBy('sort_order')->first();
+        return $this->hasOne(ResumeImage::class)->orderBy('sort_order')->ofMany('sort_order', 'min');
     }
 
     public function review(): HasOne

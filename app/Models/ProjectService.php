@@ -12,8 +12,10 @@ class ProjectService extends Model
     protected $fillable = [
         'parent_id',
         'title',
+        'title_en',
         'slug',
         'description',
+        'description_en',
         'is_active',
         'sort_order',
     ];

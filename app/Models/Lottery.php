@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -9,11 +10,16 @@ class Lottery extends Model
 {
     protected $fillable = [
         'title',
+        'title_en',
         'description',
+        'description_en',
         'starts_at',
         'ends_at',
         'capacity',
+        'price',
         'winner_count',
+        'location',
+        'location_en',
         'status',
         'drawn_at',
     ];
@@ -32,5 +38,10 @@ class Lottery extends Model
     public function winners(): HasMany
     {
         return $this->hasMany(LotteryWinner::class);
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', 'active');
     }
 }

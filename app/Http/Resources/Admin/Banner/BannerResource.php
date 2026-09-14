@@ -12,8 +12,10 @@ class BannerResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
+            'title_en' => $this->title_en,
             'image' => $this->image ? asset('storage/' . $this->image) : null,
             'alt' => $this->alt,
+            'alt_en' => $this->alt_en,
             'link' => $this->link,
             'sort_order' => $this->sort_order,
             'is_active' => $this->is_active,

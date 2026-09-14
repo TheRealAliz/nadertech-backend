@@ -21,8 +21,7 @@ class ResumeController extends Controller
 {
     public function __construct(
         private ImageUploadService $imageUploadService
-    ) {
-    }
+    ) {}
 
     #[OA\Post(
         path: '/api/admin/resume',
@@ -90,8 +89,10 @@ class ResumeController extends Controller
 
             $resume = Resume::create([
                 'title' => $data['title'],
+                'title_en' => $data['title_en'] ?? null,
                 'slug' => $slug,
                 'description' => $data['description'],
+                'description_en' => $data['description_en'] ?? null,
                 'is_published' => $data['is_published'] ?? true,
                 'category_id' => $data['category_id'] ?? null,
             ]);
@@ -105,9 +106,12 @@ class ResumeController extends Controller
 
             $resume->review()->create([
                 'name' => $data['customer_name'],
+                'name_en' => $data['customer_name_en'] ?? null,
                 'position' => $data['customer_position'] ?? null,
+                'position_en' => $data['customer_position_en'] ?? null,
                 'avatar' => $avatarPath,
                 'description' => $data['customer_description'],
+                'description_en' => $data['customer_description_en'] ?? null,
             ]);
 
             if ($request->hasFile('images')) {
@@ -124,7 +128,6 @@ class ResumeController extends Controller
             }
 
             $resume->load(['review', 'images', 'category']);
-
             return response()->json([
                 'message' => 'Resume created successfully',
                 'data' => new ResumeResource($resume),
@@ -150,6 +153,13 @@ class ResumeController extends Controller
                 in: 'query',
                 required: false,
                 schema: new OA\Schema(type: 'integer', example: 6, minimum: 1, maximum: 100)
+            ),
+            new OA\Parameter(
+                name: 'category_id',
+                in: 'query',
+                required: false,
+                description: 'Filter resumes by category ID',
+                schema: new OA\Schema(type: 'integer', example: 1)
             ),
         ],
         responses: [
@@ -197,10 +207,16 @@ class ResumeController extends Controller
     )]
     public function index(Request $request): AnonymousResourceCollection
     {
+        $perPage = min($request->integer('per_page', 6), 100);
+        $categoryId = $request->integer('category_id');
+
         $resumes = Resume::query()
             ->with('firstImage')
+            ->when($categoryId, function ($query) use ($categoryId) {
+                $query->where('category_id', $categoryId);
+            })
             ->latest()
-            ->paginate(6);
+            ->paginate($perPage);
 
         return ResumeListResource::collection($resumes);
     }
@@ -325,8 +341,10 @@ class ResumeController extends Controller
 
             $resume->update([
                 'title' => $data['title'],
+                'title_en' => $data['title_en'] ?? $resume->title_en,
                 'slug' => $slug,
                 'description' => $data['description'],
+                'description_en' => $data['description_en'] ?? $resume->description_en,
                 'is_published' => $data['is_published'] ?? $resume->is_published,
                 'category_id' => $data['category_id'] ?? null,
             ]);
@@ -346,19 +364,21 @@ class ResumeController extends Controller
                 ['resume_id' => $resume->id],
                 [
                     'name' => $data['customer_name'],
+                    'name_en' => $data['customer_name_en'] ?? $resume->review?->name_en,
                     'position' => $data['customer_position'] ?? null,
+                    'position_en' => $data['customer_position_en'] ?? $resume->review?->position_en,
                     'avatar' => $avatarPath,
                     'description' => $data['customer_description'],
+                    'description_en' => $data['customer_description_en'] ?? $resume->review?->description_en,
                 ]
             );
 
+            foreach ($resume->images()->whereIn('id', $data['removed_images'] ?? [])->get() as $img) {
+                $this->imageUploadService->delete($img->image);
+                $img->delete();
+            }
+
             if ($request->hasFile('images')) {
-
-                foreach ($resume->images as $img) {
-                    $this->imageUploadService->delete($img->image);
-                }
-
-                $resume->images()->delete();
 
                 foreach ($request->file('images') as $index => $image) {
 

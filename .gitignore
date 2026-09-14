@@ -31,3 +31,6 @@
 storage/logs/*.log
 
 public/avatars
+workspace.json
+workspacememory.md
+/graphify-out

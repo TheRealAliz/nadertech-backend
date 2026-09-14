@@ -2,13 +2,20 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\LotteryException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Lottery\LoginRequest;
+use App\Http\Resources\Lottery\EntryResource;
+use App\Http\Resources\Lottery\LotteryResource;
+use App\Http\Resources\Lottery\MyStatusResource;
 use App\Models\Lottery;
 use App\Models\LotteryEntry;
 use App\Models\LotteryWinner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 
 class LotteryController extends Controller
@@ -17,67 +24,166 @@ class LotteryController extends Controller
         path: '/api/lotteries',
         tags: ['Lottery'],
         summary: 'List lotteries',
+        description: 'Get paginated list of active lotteries',
+        parameters: [
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer', example: 1)
+            ),
+            new OA\Parameter(
+                name: 'per_page',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer', example: 10, minimum: 1, maximum: 100)
+            ),
+        ],
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'Lotteries list'
-            )
+                description: 'Lotteries list',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/LotteryResource')
+                        ),
+                        new OA\Property(
+                            property: 'links',
+                            type: 'object'
+                        ),
+                        new OA\Property(
+                            property: 'meta',
+                            type: 'object'
+                        ),
+                    ]
+                )
+            ),
         ]
     )]
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Lottery::query()->latest();
+        $perPage = min($request->integer('per_page', 10), 100);
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->string('status')->toString());
-        }
+        $lotteries = Lottery::query()
+            ->active()
+            ->latest()
+            ->paginate($perPage);
 
-        $lotteries = $query->paginate(15);
-
-        return response()->json($lotteries);
+        return LotteryResource::collection($lotteries);
     }
 
     #[OA\Get(
         path: '/api/lotteries/{lottery}',
         tags: ['Lottery'],
         summary: 'Show lottery details',
+        description: 'Get detailed information about a specific lottery',
         parameters: [
             new OA\Parameter(
                 name: 'lottery',
                 in: 'path',
                 required: true,
+                description: 'Lottery ID',
                 schema: new OA\Schema(type: 'integer', example: 1)
             )
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Lottery details'),
-            new OA\Response(response: 404, description: 'Lottery not found'),
+            new OA\Response(
+                response: 200,
+                description: 'Lottery details',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            ref: '#/components/schemas/LotteryResource'
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Lottery not found',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Lottery not found'),
+                    ]
+                )
+            ),
         ]
     )]
-    public function show(Lottery $lottery): JsonResponse
+    public function show(Lottery $lottery): LotteryResource
     {
-        $lottery->loadCount(['entries', 'winners']);
-
-        return response()->json($lottery);
+        return new LotteryResource($lottery);
     }
 
     #[OA\Post(
         path: '/api/lotteries/{lottery}/register',
         tags: ['Lottery'],
         summary: 'Register current user in lottery',
+        description: 'Register the authenticated user for a specific lottery',
         security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(
                 name: 'lottery',
                 in: 'path',
                 required: true,
+                description: 'Lottery ID',
                 schema: new OA\Schema(type: 'integer', example: 1)
             )
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Registered successfully'),
-            new OA\Response(response: 409, description: 'Already registered or invalid state'),
-            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(
+                response: 200,
+                description: 'Registered successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Successfully registered'),
+                        new OA\Property(
+                            property: 'data',
+                            ref: '#/components/schemas/EntryResource'
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'User not authenticated'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 409,
+                description: 'Already registered or invalid state',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'You have already registered for this lottery'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Lottery is not active'),
+                        new OA\Property(property: 'errors', type: 'object'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Bad request',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Lottery capacity has been reached'),
+                    ]
+                )
+            ),
         ]
     )]
     public function register(Request $request, Lottery $lottery): JsonResponse
@@ -85,27 +191,19 @@ class LotteryController extends Controller
         $user = $request->user();
 
         if (!$user) {
-            return response()->json([
-                'message' => 'کاربر احراز هویت نشده است.',
-            ], 401);
+            LotteryException::unauthenticated();
         }
 
         if ($lottery->status !== 'active') {
-            return response()->json([
-                'message' => 'این قرعه‌کشی در حال حاضر فعال نیست.',
-            ], 409);
+            LotteryException::lotteryNotActive();
         }
 
         if ($lottery->starts_at && now()->lt($lottery->starts_at)) {
-            return response()->json([
-                'message' => 'زمان ثبت‌نام این قرعه‌کشی هنوز شروع نشده است.',
-            ], 409);
+            LotteryException::registrationNotStarted();
         }
 
         if ($lottery->ends_at && now()->gt($lottery->ends_at)) {
-            return response()->json([
-                'message' => 'مهلت ثبت‌نام این قرعه‌کشی به پایان رسیده است.',
-            ], 409);
+            LotteryException::registrationEnded();
         }
 
         $alreadyRegistered = LotteryEntry::query()
@@ -114,9 +212,7 @@ class LotteryController extends Controller
             ->exists();
 
         if ($alreadyRegistered) {
-            return response()->json([
-                'message' => 'شما قبلاً در این قرعه‌کشی ثبت‌نام کرده‌اید.',
-            ], 409);
+            LotteryException::alreadyRegistered();
         }
 
         if ($lottery->capacity !== null) {
@@ -125,21 +221,150 @@ class LotteryController extends Controller
                 ->count();
 
             if ($entriesCount >= $lottery->capacity) {
-                return response()->json([
-                    'message' => 'ظرفیت این قرعه‌کشی تکمیل شده است.',
-                ], 409);
+                LotteryException::capacityReached();
             }
         }
 
-        $entry = LotteryEntry::query()->create([
+        do {
+            $code = Str::upper(Str::random(14));
+        } while (LotteryEntry::where('code', $code)->exists());
+
+        $entry = LotteryEntry::create([
             'lottery_id' => $lottery->id,
             'user_id' => $user->id,
             'registered_at' => now(),
+            'code' => $code,
         ]);
 
+        $entry->load(['user', 'lottery']);
+
         return response()->json([
-            'message' => 'ثبت‌نام شما در قرعه‌کشی با موفقیت انجام شد.',
-            'entry' => $entry,
+            'message' => 'Successfully registered',
+            'data' => new EntryResource($entry),
+        ]);
+    }
+
+    #[OA\Post(
+        path: '/api/lotteries/{lottery}/login',
+        tags: ['Lottery'],
+        summary: 'Check lottery entry with code',
+        description: 'Verify a user\'s lottery entry using mobile number and entry code. Returns lottery status and winner information.',
+        parameters: [
+            new OA\Parameter(
+                name: 'lottery',
+                in: 'path',
+                required: true,
+                description: 'Lottery ID',
+                schema: new OA\Schema(type: 'integer', example: 1)
+            )
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['mobile', 'code'],
+                properties: [
+                    new OA\Property(
+                        property: 'mobile',
+                        type: 'string',
+                        description: 'User mobile number',
+                        example: '09123456789'
+                    ),
+                    new OA\Property(
+                        property: 'code',
+                        type: 'string',
+                        description: 'Lottery entry code (14 characters)',
+                        example: 'ABC123DEF456GH'
+                    )
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Entry verified successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(
+                                    property: 'lottery_finished',
+                                    type: 'boolean',
+                                    description: 'Whether the lottery has ended',
+                                    example: true
+                                ),
+                                new OA\Property(
+                                    property: 'is_winner',
+                                    type: 'boolean',
+                                    description: 'Whether the user is a winner',
+                                    example: true
+                                )
+                            ]
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error - Invalid credentials',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'The provided mobile and code are invalid.'),
+                        new OA\Property(
+                            property: 'errors',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(
+                                    property: 'code',
+                                    type: 'array',
+                                    items: new OA\Items(type: 'string'),
+                                    example: ['The provided mobile and code are invalid.']
+                                )
+                            ]
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Lottery not found',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Lottery not found'),
+                    ]
+                )
+            ),
+        ]
+    )]
+    public function login(LoginRequest $request, Lottery $lottery)
+    {
+        $entry = LotteryEntry::query()
+            ->where('lottery_id', $lottery->id)
+            ->where('code', $request->code)
+            ->whereHas('user', function ($query) use ($request) {
+                $query->where('mobile', $request->mobile);
+            })
+            ->first();
+
+        if (!$entry) {
+            throw ValidationException::withMessages([
+                'code' => 'The provided mobile and code are invalid.',
+            ]);
+        }
+
+        $lottery->load('winners');
+
+        $isFinished = $lottery->ends_at && now()->gt($lottery->ends_at);
+
+        $isWinner = $lottery->winners
+            ->contains('user_id', $entry->user_id);
+
+        return response()->json([
+            'data' => [
+                'lottery_finished' => $isFinished,
+                'is_winner' => $isWinner,
+            ],
         ]);
     }
 
@@ -147,24 +372,46 @@ class LotteryController extends Controller
         path: '/api/lotteries/{lottery}/my-status',
         tags: ['Lottery'],
         summary: 'Get current user lottery status',
+        description: 'Get the authenticated user\'s registration status and winner status for a lottery',
         security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(
                 name: 'lottery',
                 in: 'path',
                 required: true,
+                description: 'Lottery ID',
                 schema: new OA\Schema(type: 'integer', example: 1)
             )
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Status returned')
+            new OA\Response(
+                response: 200,
+                description: 'Status returned',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            ref: '#/components/schemas/MyStatusResource'
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated'
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Lottery not found'
+            ),
         ]
     )]
-    public function myStatus(Request $request, Lottery $lottery): JsonResponse
+    public function myStatus(Request $request, Lottery $lottery): MyStatusResource
     {
         $user = $request->user();
 
         $entry = LotteryEntry::query()
+            ->with(['user', 'lottery'])
             ->where('lottery_id', $lottery->id)
             ->where('user_id', $user->id)
             ->first();
@@ -174,11 +421,9 @@ class LotteryController extends Controller
             ->where('user_id', $user->id)
             ->first();
 
-        return response()->json([
-            'registered' => (bool) $entry,
-            'is_winner' => (bool) $winner,
-            'winner_position' => $winner?->position,
+        return new MyStatusResource([
             'entry' => $entry,
+            'winner' => $winner,
         ]);
     }
 
@@ -186,12 +431,51 @@ class LotteryController extends Controller
         path: '/api/my/lotteries',
         tags: ['Lottery'],
         summary: 'List current user lottery participations',
+        description: 'Get paginated list of lotteries the authenticated user has participated in',
         security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer', example: 1)
+            ),
+            new OA\Parameter(
+                name: 'per_page',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer', example: 15, minimum: 1, maximum: 100)
+            ),
+        ],
         responses: [
-            new OA\Response(response: 200, description: 'My lotteries')
+            new OA\Response(
+                response: 200,
+                description: 'My lotteries',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/EntryResource')
+                        ),
+                        new OA\Property(
+                            property: 'links',
+                            type: 'object'
+                        ),
+                        new OA\Property(
+                            property: 'meta',
+                            type: 'object'
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated'
+            ),
         ]
     )]
-    public function myLotteries(Request $request): JsonResponse
+    public function myLotteries(Request $request): AnonymousResourceCollection
     {
         $user = $request->user();
 
@@ -201,7 +485,6 @@ class LotteryController extends Controller
             ->latest()
             ->paginate(15);
 
-        return response()->json($entries);
+        return EntryResource::collection($entries);
     }
 }
-

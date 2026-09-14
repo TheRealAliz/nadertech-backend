@@ -11,9 +11,12 @@ class ResumeReviewResource extends JsonResource
     {
         return [
             'name' => $this->name,
+            'name_en' => $this->name_en,
             'position' => $this->position,
-            'avatar' => $this->avatar ? asset('storage/resumes/' . $this->avatar) : null,
+            'position_en' => $this->position_en,
+            'avatar' => $this->avatar ? asset('storage/' . $this->avatar) : null,
             'description' => $this->description,
+            'description_en' => $this->description_en,
         ];
     }
 }

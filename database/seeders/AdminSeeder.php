@@ -11,7 +11,7 @@ class AdminSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = Admin::updateOrCreate(
+        Admin::updateOrCreate(
             [
                 'username' => 'superadmin',
             ],
@@ -19,6 +19,18 @@ class AdminSeeder extends Seeder
                 'full_name' => 'Super Admin',
                 'mobile' => '09123456789',
                 'password' => Hash::make('admin'),
+                'is_active' => true,
+            ]
+        );
+
+        Admin::updateOrCreate(
+            [
+                'username' => 'mainAdmin',
+            ],
+            [
+                'full_name' => 'Main Admin',
+                'mobile' => '09987654321',
+                'password' => Hash::make('main123456'),
                 'is_active' => true,
             ]
         );

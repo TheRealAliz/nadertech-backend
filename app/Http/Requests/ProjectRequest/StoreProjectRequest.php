@@ -10,19 +10,19 @@ class StoreProjectRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'service_id' => 'required|exists:project_services,id',
+            'type_id' => 'required|exists:project_request_types,id',
             'name' => 'required|string|max:100',
             'mobile' => 'required|string|max:13',
             'email' => 'nullable|email',
-            'description' => 'nullable|string',
+            'description' => 'required|string',
         ];
     }
 
     public function messages()
     {
         return [
-            'service_id.required' => 'انتخاب نوع درخواست الزامی است.',
-            'service_id.exists' => 'نوع درخواست انتخاب شده معتبر نیست.',
+            'type_id.required' => 'انتخاب نوع درخواست الزامی است.',
+            'type_id.exists' => 'نوع درخواست انتخاب شده معتبر نیست.',
 
             'name.required' => 'نام و نام خانوادگی کاربر الزامی می‌باشد.',
             'name.string' => 'نام کاربر معتبر نمی‌باشد.',

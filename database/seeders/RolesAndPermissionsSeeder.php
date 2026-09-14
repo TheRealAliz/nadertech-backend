@@ -25,8 +25,14 @@ class RolesAndPermissionsSeeder extends Seeder
             'admin.users.view',
             'admin.users.view.single',
 
+            // Admins
+            'admin.admins.roles.view',
+            'admin.admins.roles.update',
+            'admin.admins.roles.permissions.view',
+            'admin.admins.roles.permissions.update',
+
             // Banners
-            'admin.banners.show',
+            'admin.banners.view',
             'admin.banners.create',
             'admin.banners.update',
             'admin.banners.delete',
@@ -44,11 +50,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'admin.articles.update.thumbnail',
 
             // Lotteries
+            'admin.lotteries.view',
             'admin.lotteries.create',
             'admin.lotteries.update',
             'admin.lotteries.delete',
-            'admin.lotteries.entries.view',
             'admin.lotteries.draw',
+            'admin.lotteries.entries.view',
             'admin.lotteries.winners.view',
 
             // Project Requests
@@ -59,6 +66,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'admin.resumes.create',
             'admin.resumes.update',
             'admin.resumes.delete',
+
+            // FAQs
+            'admin.faqs.view',
+            'admin.faqs.create',
+            'admin.faqs.update',
+            'admin.faqs.delete',
         ];
 
         foreach ($permissions as $permission) {
@@ -79,14 +92,53 @@ class RolesAndPermissionsSeeder extends Seeder
             'guard_name' => 'admin',
         ]);
 
+        $viewer = Role::firstOrCreate([
+            'name' => 'viewer',
+            'guard_name' => 'admin',
+        ]);
+
         /*
         |--------------------------------------------------------------------------
         | Assign Permissions
         |--------------------------------------------------------------------------
         */
 
-        $superAdmin->syncPermissions(Permission::all());
+        // Super Admin → همه دسترسی‌ها
+        $superAdmin->syncPermissions(
+            Permission::where('guard_name', 'admin')->get()
+        );
 
-        Admin::find(1)->assignRole('super-admin');
+        // Viewer → فقط دسترسی‌های مشاهده
+        $viewer->syncPermissions([
+            'admin.users.view',
+            'admin.users.view.single',
+
+            'admin.admins.roles.view',
+            'admin.admins.roles.permissions.view',
+
+            'admin.banners.view',
+
+            'admin.articles.view',
+            'admin.articles.archived.view',
+
+            'admin.lotteries.view',
+            'admin.lotteries.entries.view',
+            'admin.lotteries.winners.view',
+
+            'admin.requests.view',
+
+            'admin.resumes.view',
+
+            'admin.faqs.view',
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Assign Roles
+        |--------------------------------------------------------------------------
+        */
+
+        Admin::where('username', 'superadmin')->first()?->assignRole('super-admin');
+        Admin::where('username', 'mainAdmin')->first()?->assignRole('viewer');
     }
 }

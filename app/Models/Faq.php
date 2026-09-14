@@ -10,6 +10,8 @@ class Faq extends Model
 {
     protected $fillable = [
         'question',
+        'question_en',
+        'answer_en',
         'answer',
         'sort_order',
         'is_active',
@@ -27,6 +29,6 @@ class Faq extends Model
 
     public function scopeOrdered(Builder $query): Builder
     {
-        return $query->orderBy('order');
+        return $query->orderBy('sort_order');
     }
 }

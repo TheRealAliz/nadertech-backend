@@ -11,6 +11,7 @@ class LotteryEntry extends Model
         'lottery_id',
         'user_id',
         'registered_at',
+        'code',
     ];
 
     protected $casts = [

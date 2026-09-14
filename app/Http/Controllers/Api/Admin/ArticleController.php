@@ -67,19 +67,23 @@ class ArticleController extends Controller
             new OA\Response(response: 403, description: 'Forbidden'),
         ]
     )]
-    public function store(StoreArticleRequest $request): JsonResponse
+    public function store(Request $request, StoreArticleRequest $articleRequest): JsonResponse
     {
-        $data = $request->validated();
+        $data = $articleRequest->validated();
 
         // Generate slug from title if not provided
         $data['slug'] ??= Str::slug($data['title']);
 
         $this->handlePublishedAt($data);
 
-        $data['thumbnail'] = $this->imageUploadService->upload(
-            $request->file('thumbnail'),
-            'images/articles'
-        );
+        if ($articleRequest->hasFile('thumbnail')) {
+            $data['thumbnail'] = $this->imageUploadService->upload(
+                $articleRequest->file('thumbnail'),
+                'images/articles'
+            );
+        }
+
+        $data['admin_id'] = $request->user()->id;
 
         $article = Article::create($data);
 

@@ -20,7 +20,7 @@ class UserResource extends JsonResource
             'postal_code' => $this->postal_code,
             'province' => $this->province,
             'address' => $this->address,
-            'avatar' => $this->avatar ? Storage::url($this->avatar) : null,
+            'avatar' => $this->avatar ? asset('storage/' . $this->avatar) : null,
             'mobile_verified_at' => $this->mobile_verified_at?->toDateTimeString(),
             'email_verified_at' => $this->email_verified_at?->toDateTimeString(),
             'created_at' => $this->created_at?->toDateTimeString(),

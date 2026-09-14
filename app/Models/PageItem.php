@@ -10,6 +10,7 @@ class PageItem extends Model
         'page',
         'key',
         'value',
+        'value_en',
         'type',
         'order',
         'is_active',

@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\AdminRoleController;
 use App\Http\Controllers\Api\Admin\ArticleController as AdminArticleController;
 use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Api\Admin\BannerController as AdminBannerController;
+use App\Http\Controllers\Api\Admin\FaqController as AdminFaqController;
 use App\Http\Controllers\Api\Admin\LotteryController as AdminLotteryController;
 use App\Http\Controllers\Api\ProjectServiceController;
 use App\Http\Controllers\Api\PageItemController;
@@ -13,10 +15,12 @@ use App\Http\Controllers\Api\LotteryController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\Admin\ProjectRequestController as AdminProjectRequestController;
 use App\Http\Controllers\Api\Admin\ResumeController as AdminResumeController;
+use App\Http\Controllers\Api\Admin\RolePermissionController;
 use App\Http\Controllers\Api\ProjectRequestController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\ArticleController;
 use App\Http\Controllers\Api\BannerController;
+use App\Http\Controllers\Api\ResumeController;
 
 // ========================================== Authenticate ==========================================
 
@@ -61,17 +65,26 @@ Route::prefix('services')->group(function () {
 // ======================================== Project Requests ========================================
 
 Route::prefix('requests')->group(function () {
-    Route::get('/store', [ProjectRequestController::class, 'store']);
+    Route::post('/', [ProjectRequestController::class, 'store']);
+    Route::get('/types', [ProjectRequestController::class, 'getTypes']);
+});
+
+// ============================================ Resumes =============================================
+
+Route::prefix('resumes')->group(function () {
+    Route::get('/', [ResumeController::class, 'index']);
+    Route::get('/{resume:slug}', [ResumeController::class, 'show']);
 });
 
 // ============================================ Lotteries ===========================================
 
-Route::prefix('lotteris')->group(function () {
+Route::prefix('lotteries')->group(function () {
     Route::get('/', [LotteryController::class, 'index']);
     Route::get('/{lottery}', [LotteryController::class, 'show']);
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{lottery}/register', [LotteryController::class, 'register']);
+        Route::post('/{lottery}/login', [LotteryController::class, 'login']);
         Route::get('/{lottery}/my-status', [LotteryController::class, 'myStatus']);
         Route::get('/me', [LotteryController::class, 'myLotteries']);
     });
@@ -87,6 +100,7 @@ Route::prefix('banners')->group(function () {
 
 Route::prefix('articles')->group(function () {
     Route::get('/', [ArticleController::class, 'index']);
+    Route::get('/{article:slug}', [ArticleController::class, 'show']);
 });
 
 // ============================================ Page Items ============================================
@@ -101,6 +115,12 @@ Route::prefix('page')->group(function () {
 Route::prefix('faqs')->group(function () {
     Route::get('/', [FaqController::class, 'index']);
     Route::get('/{faq}', [FaqController::class, 'show']);
+});
+
+// =============================================== FAQs ===============================================
+
+Route::get('/terms', function () {
+    return response()->json(config('terms'));
 });
 
 // ============================================== Admin ===============================================
@@ -121,6 +141,24 @@ Route::middleware(['auth:admin'])->prefix('admin')->group(function () {
 
         Route::get('/{user}', [UserController::class, 'show'])
             ->middleware('permission:admin.users.view.single');
+    });
+
+    // ============================================ Admins ============================================
+
+    Route::prefix('admins/{admin}/roles')->group(function () {
+        Route::get('/', [AdminRoleController::class, 'show'])
+            ->middleware('permission:admin.admins.roles.view');
+
+        Route::put('/', [AdminRoleController::class, 'sync'])
+            ->middleware('permission:admin.admins.roles.update');
+    });
+
+    Route::prefix('roles/{role}/permissions')->group(function () {
+        Route::get('/', [RolePermissionController::class, 'show'])
+            ->middleware('permission:admin.admins.roles.permissions.view');
+
+        Route::put('/', [RolePermissionController::class, 'sync'])
+            ->middleware('permission:admin.admins.roles.permissions.update');
     });
 
     // ======================================= Home Page Banners ======================================
@@ -185,13 +223,27 @@ Route::middleware(['auth:admin'])->prefix('admin')->group(function () {
         Route::get('/', [AdminProjectRequestController::class, 'index'])
             ->middleware('permission:admin.requests.view');
 
+        Route::get('/types', [AdminProjectRequestController::class, 'getTypes'])
+            ->middleware('permission:admin.requests.view');
+
         Route::get('/{request}', [AdminProjectRequestController::class, 'show'])
             ->middleware('permission:admin.requests.view');
     });
 
+    // ======================================= Project Services =======================================
+
+    Route::prefix('services')->group(function () {
+        Route::post('/', [ProjectServiceController::class, 'store']);
+        Route::get('/', [ProjectServiceController::class, 'index']);
+        Route::get('/tree', [ProjectServiceController::class, 'tree']);
+        Route::get('/{service}', [ProjectServiceController::class, 'show']);
+        Route::put('/{service}', [ProjectServiceController::class, 'update']);
+        Route::delete('/{service}', [ProjectServiceController::class, 'destroy']);
+    });
+
     // ============================================ Resumes ===========================================
 
-    Route::prefix('resume')->group(function () {
+    Route::prefix('resumes')->group(function () {
         Route::get('/', [AdminResumeController::class, 'index'])
             ->middleware('permission:admin.resumes.view');
 
@@ -214,12 +266,53 @@ Route::middleware(['auth:admin'])->prefix('admin')->group(function () {
     // =========================================== Lotteries ==========================================
 
     Route::prefix('lotteries')->group(function () {
-        Route::get('/', [AdminLotteryController::class, 'index']);
-        Route::get('/{lottery}', [AdminLotteryController::class, 'show']);
-        Route::post('/', [AdminLotteryController::class, 'store']);
-        Route::put('/{lottery}', [AdminLotteryController::class, 'update']);
-        Route::get('/{lottery}/entries', [AdminLotteryController::class, 'entries']);
-        Route::post('/{lottery}/draw', [AdminLotteryController::class, 'draw']);
-        Route::get('/{lottery}/winners', [AdminLotteryController::class, 'winners']);
+        Route::get('/', [AdminLotteryController::class, 'index'])
+            ->middleware('permission:admin.lotteries.view');
+
+        Route::get('/{lottery}', [AdminLotteryController::class, 'show'])
+            ->middleware('permission:admin.lotteries.view');
+
+        Route::post('/', [AdminLotteryController::class, 'store'])
+            ->middleware('permission:admin.lotteries.create');
+
+        Route::put('/{lottery}', [AdminLotteryController::class, 'update'])
+            ->middleware('permission:admin.lotteries.update');
+
+        Route::post('/{lottery}/draw', [AdminLotteryController::class, 'draw'])
+            ->middleware('permission:admin.lotteries.draw');
+
+        Route::get('/{lottery}/entries', [AdminLotteryController::class, 'entries'])
+            ->middleware('permission:admin.lotteries.entries.view');
+
+        Route::get('/{lottery}/winners', [AdminLotteryController::class, 'winners'])
+            ->middleware('permission:admin.lotteries.winners.view');
+    });
+
+    // ========================================== Page Items ==========================================
+
+    Route::prefix('page')->group(function () {
+        Route::get('/{page}', [PageItemController::class, 'index']);
+        Route::get('/{page}/{key}', [PageItemController::class, 'show']);
+        Route::post('/', [PageItemController::class, 'updateOrCreate']);
+        Route::delete('/{pageItem}', [PageItemController::class, 'destroy']);
+    });
+
+    // ============================================= FAQs =============================================
+
+    Route::prefix('faqs')->group(function () {
+        Route::get('/', [AdminFaqController::class, 'index'])
+            ->middleware('permission:admin.faqs.view');
+
+        Route::get('/{faq}', [AdminFaqController::class, 'show'])
+            ->middleware('permission:admin.faqs.view');
+
+        Route::post('/', [AdminFaqController::class, 'store'])
+            ->middleware('permission:admin.faqs.create');
+
+        Route::put('/{faq}', [AdminFaqController::class, 'update'])
+            ->middleware('permission:admin.faqs.update');
+
+        Route::delete('/{faq}', [AdminFaqController::class, 'destroy'])
+            ->middleware('permission:admin.faqs.delete');
     });
 });

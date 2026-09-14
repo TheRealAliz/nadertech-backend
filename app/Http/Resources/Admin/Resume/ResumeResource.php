@@ -12,11 +12,13 @@ class ResumeResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
+            'title_en' => $this->title_en,
             'slug' => $this->slug,
             'description' => $this->description,
+            'description_en' => $this->description_en,
             'is_published' => (bool) $this->is_published,
 
-            'category' => $this->whenLoaded('category')->title,
+            'category' => $this->whenLoaded('category')?->title,
 
             'review' => new ResumeReviewResource($this->whenLoaded('review')),
 
