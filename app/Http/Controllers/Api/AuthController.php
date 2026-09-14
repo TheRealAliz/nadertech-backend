@@ -2,20 +2,25 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\Auth\VerifyForgotPasswordCodeRequest;
 use App\Models\User;
 use App\Services\LoginOtpService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\SendOTPRequest;
 use App\Http\Requests\Auth\LoginWithPasswordRequest;
+use App\Http\Requests\Auth\ResendOTPRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Http\Requests\Auth\VerifyOTPRequest;
 use App\Http\Resources\Auth\UserResource;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 use App\Models\PasswordResetCode;
+use App\Services\PasswordResetService;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -45,13 +50,13 @@ class AuthController extends Controller
                         new OA\Property(property: 'data', properties: [
                             new OA\Property(property: 'access_token', type: 'string', example: '1|abc123...'),
                             new OA\Property(property: 'token_type', type: 'string', example: 'Bearer'),
-                            new OA\Property(property: 'user', properties: [
-                                new OA\Property(property: 'id', type: 'integer', example: 1),
-                                new OA\Property(property: 'full_name', type: 'string', example: 'علی احمدی'),
-                                new OA\Property(property: 'username', type: 'string', example: 'ali_ahmadi'),
-                                new OA\Property(property: 'email', type: 'string', example: 'ali@example.com'),
-                                new OA\Property(property: 'mobile', type: 'string', example: '09123456789'),
-                            ], type: 'object')
+                            new OA\Property(
+                                property: 'data',
+                                type: 'array',
+                                items: new OA\Items(
+                                    ref: '#/components/schemas/UserResource'
+                                )
+                            ),
                         ], type: 'object')
                     ]
                 )
@@ -103,7 +108,7 @@ class AuthController extends Controller
         path: '/api/auth/send-otp',
         tags: ['Auth'],
         summary: 'Request OTP for login',
-        description: 'Step 1: Send OTP to user mobile',
+        description: 'Step 1: Send OTP to user mobile. If OTP already sent and active, returns existing one.',
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
@@ -114,21 +119,204 @@ class AuthController extends Controller
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: 'OTP sent'),
-            new OA\Response(response: 404, description: 'User not found'),
+            new OA\Response(
+                response: 200,
+                description: 'OTP sent or already exists - Two possible messages: 
+        1. "کد تأیید برای شماره موبایل ارسال شد." (new OTP sent)
+        2. "کد تأیید قبلاً برای این شماره ارسال شده است." (OTP already exists and still valid)',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'message',
+                            type: 'string',
+                            description: 'Persian message indicating OTP status',
+                            example: 'کد تأیید برای شماره موبایل ارسال شد.'
+                        ),
+                        new OA\Property(
+                            property: 'data',
+                            properties: [
+                                new OA\Property(
+                                    property: 'login_token',
+                                    type: 'string',
+                                    description: 'Encrypted user ID for OTP verification',
+                                    example: 'eyJpdiI6...'
+                                ),
+                                new OA\Property(
+                                    property: 'expires_in',
+                                    type: 'integer',
+                                    description: 'OTP expiration time in seconds',
+                                    example: 180
+                                ),
+                            ],
+                            type: 'object'
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'User not found',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'کاربر یافت نشد.'),
+                        new OA\Property(property: 'error_key', type: 'string', example: 'user_not_found'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                        new OA\Property(property: 'errors', type: 'object', example: [
+                            'mobile' => ['شماره موبایل باید ۱۱ رقم باشد.']
+                        ])
+                    ]
+                )
+            ),
         ]
     )]
     public function sendOTP(SendOTPRequest $request, LoginOtpService $otpService): JsonResponse
     {
         $user = $this->findUserByLogin($request->mobile);
 
-        $otp = $otpService->create($user, $request->ip(), $request->userAgent());
+        $result = $otpService->create($user, $request->ip(), $request->userAgent());
+
+        $message = $result['already_sent']
+            ? 'کد تأیید قبلاً برای این شماره ارسال شده است.'
+            : 'کد تأیید برای شماره موبایل ارسال شد.';
 
         return response()->json([
-            'message' => 'کد تأیید برای شماره موبایل ارسال شد.',
+            'message' => $message,
             'data' => [
                 'login_token' => encrypt($user->id),
-                'expires_in' => $otp->getExpiresAtTimestampMs(),
+                'expires_in' => $result['otp']->getExpiresIn(),
+            ],
+        ]);
+    }
+
+    #[OA\Post(
+        path: '/api/auth/resend-otp',
+        tags: ['Auth'],
+        summary: 'Resend OTP code',
+        description: 'Resends a new OTP code to user mobile. 
+        **Note:** This endpoint only works when there is no active (non-expired) OTP code. 
+        If an active OTP code exists, the request will be rejected with error 429.',
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['login_token'],
+                properties: [
+                    new OA\Property(
+                        property: 'login_token',
+                        type: 'string',
+                        example: 'eyJpdiI6Ik5UWTJZ...',
+                        description: 'Encrypted user ID received from register or send-otp endpoint'
+                    ),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'New OTP sent successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'کد تأیید جدید با موفقیت ارسال شد.'),
+                        new OA\Property(
+                            property: 'data',
+                            properties: [
+                                new OA\Property(property: 'login_token', type: 'string', example: 'eyJpdiI6Ik5UWTJZ...'),
+                                new OA\Property(property: 'expires_in', type: 'integer', example: 180, description: 'New OTP expiration time in seconds'),
+                            ],
+                            type: 'object'
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Invalid token format',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'توکن ورودی معتبر نیست.'),
+                        new OA\Property(property: 'error_key', type: 'string', example: 'invalid_token'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'User not found',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'کاربر یافت نشد.'),
+                        new OA\Property(property: 'error_key', type: 'string', example: 'user_not_found'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                        new OA\Property(
+                            property: 'errors',
+                            type: 'object',
+                            example: [
+                                'login_token' => ['The login token field is required.']
+                            ]
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 429,
+                description: 'Active OTP code exists - Cannot resend',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'کد تأیید فعال وجود دارد. لطفاً منتظر بمانید تا منقضی شود.'),
+                        new OA\Property(property: 'error_key', type: 'string', example: 'active_otp_exists'),
+                    ]
+                )
+            ),
+        ]
+    )]
+    public function resendOtp(ResendOTPRequest $request, LoginOtpService $otpService): JsonResponse
+    {
+        try {
+            $userId = decrypt($request->login_token);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'توکن ورودی معتبر نیست.',
+                'error_key' => 'invalid_token',
+            ], 400);
+        }
+
+        $user = User::find($userId);
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'کاربر یافت نشد.',
+                'error_key' => 'user_not_found',
+            ], 404);
+        }
+
+        try {
+            $result = $otpService->resend($user, $request->ip(), $request->userAgent());
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'error_key' => 'active_otp_exists',
+            ], 429);
+        }
+
+        return response()->json([
+            'message' => 'کد تأیید جدید برای شماره موبایل ارسال شد.',
+            'data' => [
+                'login_token' => encrypt($user->id),
+                'expires_in' => $result['otp']->getExpiresIn(),
             ],
         ]);
     }
@@ -208,7 +396,76 @@ class AuthController extends Controller
             ->first();
     }
 
-    public function register(RegisterRequest $request): JsonResponse
+    #[OA\Post(
+        path: '/api/auth/register',
+        tags: ['Auth'],
+        summary: 'Register a new user and send OTP',
+        description: 'Creates a new user account, sends OTP to mobile, and returns login_token for verification',
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['full_name', 'username', 'email', 'mobile', 'password', 'password_confirmation'],
+                properties: [
+                    new OA\Property(property: 'full_name', type: 'string', maxLength: 255, example: 'علی احمدی'),
+                    new OA\Property(property: 'username', type: 'string', minLength: 3, maxLength: 50, example: 'ali_ahmadi'),
+                    new OA\Property(property: 'email', type: 'string', format: 'email', maxLength: 255, example: 'ali@example.com'),
+                    new OA\Property(property: 'mobile', type: 'string', example: '09123456789'),
+                    new OA\Property(property: 'birth_date', type: 'string', format: 'date', nullable: true, example: '2000-05-15'),
+                    new OA\Property(property: 'national_code', type: 'string', nullable: true, example: '1234567890'),
+                    new OA\Property(property: 'postal_code', type: 'string', nullable: true, example: '1234567890'),
+                    new OA\Property(property: 'province', type: 'string', nullable: true, example: 'خراسان شمالی'),
+                    new OA\Property(property: 'address', type: 'string', nullable: true, example: 'بجنورد، خیابان امام، پلاک ۱۲'),
+                    new OA\Property(property: 'password', type: 'string', format: 'password', minLength: 8, example: '12345678'),
+                    new OA\Property(property: 'password_confirmation', type: 'string', format: 'password', example: '12345678'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'User registered successfully, OTP sent',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'message',
+                            type: 'string',
+                            example: 'ثبت‌نام با موفقیت انجام شد. کد تأیید به شماره موبایل ارسال شد.'
+                        ),
+                        new OA\Property(
+                            property: 'data',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(property: 'login_token', type: 'string'),
+                                new OA\Property(property: 'expires_in', type: 'integer', example: 120),
+                                new OA\Property(
+                                    property: 'user',
+                                    ref: '#/components/schemas/UserResource'
+                                ),
+                            ]
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                        new OA\Property(
+                            property: 'errors',
+                            type: 'object',
+                            example: [
+                                'email' => ['The email has already been taken.'],
+                                'mobile' => ['The mobile has already been taken.']
+                            ]
+                        )
+                    ]
+                )
+            ),
+        ]
+    )]
+    public function register(RegisterRequest $request, LoginOtpService $otpService): JsonResponse
     {
         $validated = $request->validated();
 
@@ -217,21 +474,60 @@ class AuthController extends Controller
             'username' => $validated['username'],
             'email' => $validated['email'],
             'mobile' => $validated['mobile'],
+            'birth_date' => $validated['birth_date'] ?? null,
+            'national_code' => $validated['national_code'] ?? null,
+            'postal_code' => $validated['postal_code'] ?? null,
+            'province' => $validated['province'] ?? null,
+            'address' => $validated['address'] ?? null,
             'password' => Hash::make($validated['password']),
+            'mobile_verified_at' => null,
         ]);
 
-        $token = $user->createToken('api_token')->plainTextToken;
+        $otp = $otpService->create($user, $request->ip(), $request->userAgent())['otp'];
 
         return response()->json([
-            'message' => 'ثبت‌نام با موفقیت انجام شد.',
+            'message' => 'ثبت‌نام با موفقیت انجام شد. کد تأیید به شماره موبایل ارسال شد.',
             'data' => [
+                'login_token' => encrypt($user->id),
+                'expires_in' => $otp->getExpiresIn(),
                 'user' => new UserResource($user),
-                'access_token' => $token,
-                'token_type' => 'Bearer',
             ],
         ], 201);
     }
 
+    #[OA\Get(
+        path: '/api/auth/me',
+        tags: ['Auth'],
+        summary: 'Get authenticated user profile',
+        description: 'Returns the currently authenticated user information',
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'User profile retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            properties: [
+                                new OA\Property(property: 'user', ref: '#/components/schemas/UserResource'),
+                            ],
+                            type: 'object'
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
+                    ]
+                )
+            ),
+        ]
+    )]
     public function me(Request $request): JsonResponse
     {
         return response()->json([
@@ -241,6 +537,33 @@ class AuthController extends Controller
         ]);
     }
 
+    #[OA\Post(
+        path: '/api/auth/logout',
+        tags: ['Auth'],
+        summary: 'Logout user',
+        description: 'Revokes the current access token',
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Logged out successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'خروج با موفقیت انجام شد.'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
+                    ]
+                )
+            ),
+        ]
+    )]
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
@@ -271,33 +594,30 @@ class AuthController extends Controller
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'Reset code sent if user exists',
+                description: 'Reset code sent',
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'message', type: 'string', example: 'اگر حسابی با این اطلاعات وجود داشته باشد، کد بازیابی ارسال می‌شود.'),
                         new OA\Property(property: 'expires_in', type: 'integer', example: 300),
-                        new OA\Property(property: 'dev_code', type: 'string', example: '123456', nullable: true),
                     ]
                 )
             ),
-            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                        new OA\Property(property: 'errors', type: 'object', example: ['login' => ['The login field is required.']])
+                    ]
+                )
+            ),
         ]
     )]
-    public function forgotPassword(Request $request): JsonResponse
+    public function forgotPassword(ForgotPasswordRequest $request, PasswordResetService $service): JsonResponse
     {
-        $validated = $request->validate([
-            'login' => ['required', 'string', 'max:255'],
-        ]);
+        $user = $this->findUserByLogin($request->login);
 
-        $login = $validated['login'];
-
-        $user = User::query()
-            ->where('email', $login)
-            ->orWhere('mobile', $login)
-            ->orWhere('username', $login)
-            ->first();
-
-        // برای جلوگیری از user enumeration همیشه پاسخ موفق برمی‌گردانیم.
         if (!$user) {
             return response()->json([
                 'message' => 'اگر حسابی با این اطلاعات وجود داشته باشد، کد بازیابی ارسال می‌شود.',
@@ -305,34 +625,13 @@ class AuthController extends Controller
             ]);
         }
 
-        PasswordResetCode::query()
-            ->where('user_id', $user->id)
-            ->whereNull('used_at')
-            ->delete();
-
-        $code = (string) random_int(100000, 999999);
-
-        PasswordResetCode::query()->create([
-            'user_id' => $user->id,
-            'code_hash' => Hash::make($code),
-            'expires_at' => now()->addMinutes(5),
-        ]);
-
-        /*
-         * اینجا باید کد واقعی را با SMS یا Email ارسال کنی.
-         * مثلا:
-         * SmsService::send($user->mobile, "کد بازیابی رمز عبور: {$code}");
-         * یا:
-         * Mail::to($user->email)->send(new ForgotPasswordCodeMail($code));
-         */
+        $resetCode = $service->create($user, $request->ip(), $request->userAgent());
 
         return response()->json([
             'message' => 'اگر حسابی با این اطلاعات وجود داشته باشد، کد بازیابی ارسال می‌شود.',
-            'expires_in' => 300,
-            'dev_code' => app()->environment('local') ? $code : null,
+            'expires_in' => $resetCode->getExpiresIn(),
         ]);
     }
-
 
     #[OA\Post(
         path: '/api/auth/verify-forgot-password-code',
@@ -353,7 +652,8 @@ class AuthController extends Controller
                     new OA\Property(
                         property: 'code',
                         type: 'string',
-                        example: '123456'
+                        example: '123456',
+                        description: '6-digit verification code'
                     ),
                 ]
             )
@@ -365,27 +665,37 @@ class AuthController extends Controller
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'message', type: 'string', example: 'کد تایید شد.'),
-                        new OA\Property(property: 'reset_token', type: 'string', example: 'eyJpdiI6IjEyMyJ9...'),
+                        new OA\Property(property: 'reset_token', type: 'string', example: 'aB3dE5fG7hI9jK1lMn2oP3qR4sT5uV6wX7yZ8'),
                         new OA\Property(property: 'expires_in', type: 'integer', example: 300),
                     ]
                 )
             ),
-            new OA\Response(response: 401, description: 'Invalid or expired code'),
-            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(
+                response: 401,
+                description: 'Invalid or expired code',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'کد وارد شده نامعتبر یا منقضی شده است.'),
+                        new OA\Property(property: 'error_key', type: 'string', example: 'invalid_code'),
+                        new OA\Property(property: 'remaining_attempts', type: 'integer', example: 3),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                        new OA\Property(property: 'errors', type: 'object', example: ['code' => ['The code must be 6 digits.']])
+                    ]
+                )
+            ),
         ]
     )]
-    public function verifyForgotPasswordCode(Request $request): JsonResponse
+    public function verifyForgotPasswordCode(VerifyForgotPasswordCodeRequest $request, PasswordResetService $service): JsonResponse
     {
-        $validated = $request->validate([
-            'login' => ['required', 'string', 'max:255'],
-            'code' => ['required', 'string', 'size:6'],
-        ]);
-
-        $user = User::query()
-            ->where('email', $validated['login'])
-            ->orWhere('mobile', $validated['login'])
-            ->orWhere('username', $validated['login'])
-            ->first();
+        $user = $this->findUserByLogin($request->login);
 
         if (!$user) {
             return response()->json([
@@ -393,29 +703,19 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $resetCode = PasswordResetCode::query()
-            ->where('user_id', $user->id)
-            ->whereNull('used_at')
-            ->where('expires_at', '>', now())
-            ->latest()
-            ->first();
+        $result = $service->verify($user, $request->code);
 
-        if (!$resetCode || !Hash::check($validated['code'], $resetCode->code_hash)) {
+        if (!$result->success) {
             return response()->json([
-                'message' => 'کد وارد شده نامعتبر یا منقضی شده است.',
+                'message' => $result->errorMessage,
+                'error_key' => $result->errorKey,
+                'remaining_attempts' => $result->remainingAttempts,
             ], 401);
         }
 
-        $plainResetToken = Str::random(80);
-
-        $resetCode->update([
-            'verified_at' => now(),
-            'reset_token_hash' => hash('sha256', $plainResetToken),
-        ]);
-
         return response()->json([
             'message' => 'کد تایید شد.',
-            'reset_token' => $plainResetToken,
+            'reset_token' => $result->resetToken,
             'expires_in' => 300,
         ]);
     }
@@ -440,7 +740,8 @@ class AuthController extends Controller
                     new OA\Property(
                         property: 'reset_token',
                         type: 'string',
-                        example: 'yFVEFhOUMq5Q24EKiwuyLj9lfiNsfW0UC49rp2b5nQ3ZwPUSKKoFbm9FrcWqOYr5'
+                        example: 'aB3dE5fG7hI9jK1lMn2oP3qR4sT5uV6wX7yZ8',
+                        description: 'Reset token received from verify endpoint'
                     ),
                     new OA\Property(
                         property: 'password',
@@ -467,23 +768,32 @@ class AuthController extends Controller
                     ]
                 )
             ),
-            new OA\Response(response: 401, description: 'Invalid or expired reset token'),
-            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(
+                response: 401,
+                description: 'Invalid or expired reset token',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'توکن بازیابی نامعتبر یا منقضی شده است.'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                        new OA\Property(property: 'errors', type: 'object', example: [
+                            'password' => ['The password confirmation does not match.'],
+                        ])
+                    ]
+                )
+            ),
         ]
     )]
-    public function resetPassword(Request $request): JsonResponse
+    public function resetPassword(ResetPasswordRequest $request, PasswordResetService $service): JsonResponse
     {
-        $validated = $request->validate([
-            'login' => ['required', 'string', 'max:255'],
-            'reset_token' => ['required', 'string', 'max:255'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
-
-        $user = User::query()
-            ->where('email', $validated['login'])
-            ->orWhere('mobile', $validated['login'])
-            ->orWhere('username', $validated['login'])
-            ->first();
+        $user = $this->findUserByLogin($request->login);
 
         if (!$user) {
             return response()->json([
@@ -491,39 +801,16 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $resetCode = PasswordResetCode::query()
-            ->where('user_id', $user->id)
-            ->whereNull('used_at')
-            ->whereNotNull('verified_at')
-            ->where('expires_at', '>', now())
-            ->latest()
-            ->first();
+        $result = $service->resetPassword($user, $request->reset_token, $request->password);
 
-        if (
-            !$resetCode ||
-            !$resetCode->reset_token_hash ||
-            !hash_equals($resetCode->reset_token_hash, hash('sha256', $validated['reset_token']))
-        ) {
+        if (!$result['success']) {
             return response()->json([
-                'message' => 'توکن بازیابی نامعتبر یا منقضی شده است.',
+                'message' => $result['message'],
             ], 401);
         }
 
-        $user->update([
-            'password' => $validated['password'],
-        ]);
-
-        $resetCode->update([
-            'used_at' => now(),
-        ]);
-
-        PasswordResetCode::query()
-            ->where('user_id', $user->id)
-            ->whereNull('used_at')
-            ->delete();
-
         return response()->json([
-            'message' => 'رمز عبور با موفقیت تغییر کرد.',
+            'message' => $result['message'],
         ]);
     }
 }
