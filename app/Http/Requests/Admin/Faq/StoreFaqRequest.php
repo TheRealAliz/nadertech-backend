@@ -11,7 +11,9 @@ class StoreFaqRequest extends FormRequest
     {
         return [
             'question' => 'required|string|max:255',
+            'question_en' => 'nullable|string|max:255',
             'answer' => 'required|string',
+            'answer_en' => 'nullable|string',
             'is_active' => 'boolean',
             'sort_order' => 'nullable|integer',
         ];

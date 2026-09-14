@@ -12,9 +12,11 @@ class ProjectRequestResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'name_en' => $this->name_en,
             'mobile' => $this->mobile,
             'email' => $this->email,
             'description' => $this->description,
+            'description_en' => $this->description_en,
             'type' => $this->requestType,
             'created_at' => $this->created_at?->toDateTimeString(),
             'updated_at' => $this->updated_at?->toDateTimeString(),

@@ -11,6 +11,7 @@ class ResumeImage extends Model
         'resume_id',
         'image',
         'alt',
+        'alt_en',
         'sort_order',
     ];
 

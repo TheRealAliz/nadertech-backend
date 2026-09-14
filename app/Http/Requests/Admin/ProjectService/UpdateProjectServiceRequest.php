@@ -14,8 +14,10 @@ class UpdateProjectServiceRequest extends FormRequest
         return [
             'parent_id' => ['nullable', 'integer', 'exists:project_services,id', Rule::notIn([$serviceId])],
             'title' => ['sometimes', 'required', 'string', 'max:255'],
+            'title_en' => ['sometimes', 'nullable', 'string', 'max:255'],
             'slug' => ['sometimes', 'required', 'string', 'max:255', Rule::unique('project_services', 'slug')->ignore($serviceId)],
             'description' => ['nullable', 'string'],
+            'description_en' => ['nullable', 'string'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
         ];

@@ -11,13 +11,16 @@ class UpdateLotteryRequest extends FormRequest
     {
         return [
             'title' => 'sometimes|required|string|max:255',
+            'title_en' => 'nullable|string|max:255',
             'description' => 'nullable|string',
+            'description_en' => 'nullable|string',
             'starts_at' => 'nullable|date',
             'ends_at' => 'nullable|date|after_or_equal:starts_at',
             'capacity' => 'nullable|integer|min:1',
             'price' => 'sometimes|required|integer|min:0',
             'winner_count' => 'sometimes|required|integer|min:1',
             'location' => 'required|string|max:300',
+            'location_en' => 'nullable|string|max:300',
             'status' => 'sometimes|required|in:draft,active,closed,drawn',
         ];
     }

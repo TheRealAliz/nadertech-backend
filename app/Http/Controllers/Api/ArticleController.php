@@ -7,6 +7,7 @@ use App\Http\Resources\Articles\ArticleListResource;
 use App\Http\Resources\Articles\ArticleResource;
 use App\Models\Article;
 use App\Models\ArticleView;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Str;
 use OpenApi\Attributes as OA;
@@ -116,9 +117,9 @@ class ArticleController extends Controller
             ),
         ]
     )]
-    public function show(Article $article): ArticleResource
+    public function show(Request $request, Article $article): ArticleResource
     {
-        $userId = auth()->id();
+        $userId = $request->user()?->id;
         $visitorId = request()->cookie('visitor_id');
 
         // Create visitor id if not exists
@@ -132,7 +133,17 @@ class ArticleController extends Controller
             ));
         }
 
-        // 1. ALWAYS log the view
+        // ONLY increase if it's first time (unique logic)
+        $exists = ArticleView::where('article_id', $article->id)
+            ->when($userId, fn($q) => $q->where('user_id', $userId))
+            ->when(!$userId, fn($q) => $q->where('ip_address', request()->ip()))
+            ->exists();
+
+        if (!$exists) {
+            $article->incrementViews();
+        }
+
+        // ALWAYS log the view
         ArticleView::create([
             'article_id' => $article->id,
             'user_id' => $userId,
@@ -140,16 +151,6 @@ class ArticleController extends Controller
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
         ]);
-
-        // 2. ONLY increase if it's first time (unique logic)
-        $exists = ArticleView::where('article_id', $article->id)
-            ->when($userId, fn($q) => $q->where('user_id', $userId))
-            ->when(!$userId, fn($q) => $q->where('visitor_id', $visitorId))
-            ->exists();
-
-        if (!$exists) {
-            $article->incrementViews();
-        }
 
         return new ArticleResource($article);
     }

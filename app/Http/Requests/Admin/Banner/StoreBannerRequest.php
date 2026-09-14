@@ -11,8 +11,10 @@ class StoreBannerRequest extends FormRequest
     {
         return [
             'title' => 'nullable|string|max:255',
+            'title_en' => 'nullable|string|max:255',
             'image' => 'required|image|max:2048',
             'alt' => 'nullable|string|max:255',
+            'alt_en' => 'nullable|string|max:255',
             'link' => 'nullable|string|max:255',
             'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',

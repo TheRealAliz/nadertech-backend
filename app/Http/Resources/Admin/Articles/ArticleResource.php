@@ -13,12 +13,17 @@ class ArticleResource extends JsonResource
             'id' => $this->id,
             'admin_id' => $this->admin_id,
             'title' => $this->title,
+            'title_en' => $this->title_en,
             'slug' => $this->slug,
             'content' => $this->content,
+            'content_en' => $this->content_en,
             'thumbnail' => $this->thumbnail ? asset('storage/' . $this->thumbnail) : null,
             'thumbnail_alt' => $this->thumbnail_alt,
+            'thumbnail_alt_en' => $this->thumbnail_alt_en,
             'meta_title' => $this->meta_title,
+            'meta_title_en' => $this->meta_title_en,
             'meta_description' => $this->meta_description,
+            'meta_description_en' => $this->meta_description_en,
             'views_count' => $this->views_count,
 
             // Enum-friendly output

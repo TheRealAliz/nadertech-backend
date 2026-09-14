@@ -12,7 +12,9 @@ class LotteryResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
+            'title_en' => $this->title_en,
             'description' => $this->description,
+            'description_en' => $this->description_en,
             'starts_at' => $this->starts_at,
             'ends_at' => $this->ends_at,
             'capacity' => $this->capacity,
@@ -23,6 +25,7 @@ class LotteryResource extends JsonResource
             'entries' => $this->whenLoaded('entries'),
             'winners' => $this->whenLoaded('winners'),
             'location' => $this->location,
+            'location_en' => $this->location_en,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

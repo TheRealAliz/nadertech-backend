@@ -12,6 +12,7 @@ class ResumeListResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
+            'title_en' => $this->title_en,
             'cover' => new ResumeImageResource($this->whenLoaded('firstImage')),
             'created_at' => $this->created_at?->toDateTimeString(),
         ];

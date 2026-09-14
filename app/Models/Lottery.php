@@ -10,13 +10,16 @@ class Lottery extends Model
 {
     protected $fillable = [
         'title',
+        'title_en',
         'description',
+        'description_en',
         'starts_at',
         'ends_at',
         'capacity',
         'price',
         'winner_count',
         'location',
+        'location_en',
         'status',
         'drawn_at',
     ];

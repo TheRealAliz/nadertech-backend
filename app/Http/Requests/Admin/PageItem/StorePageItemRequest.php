@@ -13,6 +13,7 @@ class StorePageItemRequest extends FormRequest
         return [
             'key' => 'required|string',
             'value' => 'required',
+            'value_en' => 'nullable',
             'type' => 'required|string',
             'page' => 'required|string',
         ];

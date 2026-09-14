@@ -12,27 +12,75 @@ class UpdateProfileRequest extends FormRequest
         $userId = $this->user()->id;
 
         return [
-            'full_name' => 'sometimes|string|max:255',
+            'full_name' => [
+                'sometimes',
+                'string',
+                'max:255',
+            ],
+
             'username' => [
                 'sometimes',
                 'string',
                 'min:3',
                 'max:50',
                 'alpha_dash',
-                Rule::unique('users', 'username')->ignore($userId)
+                Rule::unique('users', 'username')->ignore($userId),
             ],
+
             'email' => [
                 'sometimes',
                 'string',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email')->ignore($userId)
+                Rule::unique('users', 'email')->ignore($userId),
             ],
+
             'mobile' => [
                 'sometimes',
                 'digits:11',
                 'starts_with:09',
-                Rule::unique('users', 'mobile')->ignore($userId)
+                Rule::unique('users', 'mobile')->ignore($userId),
+            ],
+
+            'birth_date' => [
+                'sometimes',
+                'date',
+            ],
+
+            'national_code' => [
+                'sometimes',
+                'digits:10',
+                Rule::unique('users', 'national_code')->ignore($userId),
+            ],
+
+            'postal_code' => [
+                'sometimes',
+                'digits:10',
+            ],
+
+            'province' => [
+                'sometimes',
+                'string',
+                'max:255',
+            ],
+
+            'address' => [
+                'sometimes',
+                'string',
+            ],
+
+            'avatar' => [
+                'sometimes',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:2048',
+            ],
+
+            'password' => [
+                'sometimes',
+                'string',
+                'min:8',
+                'confirmed',
             ],
         ];
     }

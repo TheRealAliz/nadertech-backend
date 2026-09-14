@@ -11,9 +11,10 @@ class ResumeImageResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'image' => asset('storage/resumes/' . $this->image),
+            'image' => asset('storage/' . $this->image),
             'sort_order' => $this->sort_order,
             'alt' => $this->alt,
+            'alt_en' => $this->alt_en,
         ];
     }
 }

@@ -292,6 +292,7 @@ class PageItemController extends Controller
             ],
             [
                 'value' => $validated['value'],
+                'value_en' => $validated['value_en'] ?? ($pageItem?->value_en ?? null),
                 'type' => $validated['type'],
             ]
         );

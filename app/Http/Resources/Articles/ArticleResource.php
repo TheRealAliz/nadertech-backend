@@ -13,10 +13,13 @@ class ArticleResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
+            'title_en' => $this->title_en,
             'slug' => $this->slug,
             'content' => $this->content,
+            'content_en' => $this->content_en,
             'thumbnail' => $this->thumbnail ? asset('storage/' . $this->thumbnail) : null,
             'thumbnail_alt' => $this->thumbnail_alt,
+            'thumbnail_alt_en' => $this->thumbnail_alt_en,
             'views_count' => $this->views_count,
             'published_at' => $this->published_at,
         ];

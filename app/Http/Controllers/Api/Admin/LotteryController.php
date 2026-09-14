@@ -170,6 +170,7 @@ class LotteryController extends Controller
     )]
     public function store(StoreLotteryRequest $request): JsonResponse
     {
+        return response()->json($request->all());
         $data = $request->validated();
 
         $lottery = Lottery::create($data);

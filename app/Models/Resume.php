@@ -11,8 +11,10 @@ class Resume extends Model
 {
     protected $fillable = [
         'title',
+        'title_en',
         'slug',
         'description',
+        'description_en',
         'is_published',
         'category_id',
         'review_id',
