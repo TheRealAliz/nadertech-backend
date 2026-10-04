@@ -9,8 +9,15 @@ use Illuminate\Support\Facades\Hash;
 
 class LoginOtpService
 {
-    public function create(User $user, ?string $ipAddress = null, ?string $userAgent = null): array
-    {
+    public function __construct(
+        protected SmsService $smsService
+    ) {}
+
+    public function create(
+        User $user,
+        ?string $ipAddress = null,
+        ?string $userAgent = null
+    ): array {
         $otp = LoginOtp::where('user_id', $user->id)
             ->whereNull('used_at')
             ->where('expires_at', '>', now())
@@ -19,7 +26,7 @@ class LoginOtpService
         if ($otp) {
             return [
                 'already_sent' => true,
-                'otp' => $otp
+                'otp' => $otp,
             ];
         }
 
@@ -38,7 +45,10 @@ class LoginOtpService
             'user_agent' => $userAgent,
         ]);
 
-        // use sms provider
+        $this->smsService->sendOtp(
+            $user->mobile,
+            $plainCode
+        );
 
         return [
             'already_sent' => false,
@@ -46,15 +56,20 @@ class LoginOtpService
         ];
     }
 
-    public function resend(User $user, ?string $ipAddress = null, ?string $userAgent = null): array
-    {
+    public function resend(
+        User $user,
+        ?string $ipAddress = null,
+        ?string $userAgent = null
+    ): array {
         $otp = LoginOtp::where('user_id', $user->id)
             ->whereNull('used_at')
             ->where('expires_at', '>', now())
             ->first();
 
         if ($otp) {
-            throw new \Exception('کد تأیید فعال قبلاً ارسال شده است. لطفاً منتظر بمانید تا منقضی شود.');
+            throw new \Exception(
+                'کد تأیید فعال قبلاً ارسال شده است. لطفاً منتظر بمانید تا منقضی شود.'
+            );
         }
 
         $plainCode = $this->makeCode();
@@ -68,7 +83,10 @@ class LoginOtpService
             'user_agent' => $userAgent,
         ]);
 
-        // use sms provider
+        $this->smsService->sendOtp(
+            $user->mobile,
+            $plainCode
+        );
 
         return [
             'otp' => $otp,
@@ -101,13 +119,19 @@ class LoginOtpService
         }
 
         $otp->update(['used_at' => now()]);
+
         return OtpVerificationResult::success();
     }
 
-    public function makeCode()
+    public function makeCode(): string
     {
         return app()->environment('local', 'testing')
             ? '123456'
-            : str_pad(random_int(0, 999_999), 6, '0', STR_PAD_LEFT);
+            : str_pad(
+                random_int(0, 999_999),
+                6,
+                '0',
+                STR_PAD_LEFT
+            );
     }
 }

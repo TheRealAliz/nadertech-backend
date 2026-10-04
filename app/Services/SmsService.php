@@ -2,18 +2,41 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 class SmsService
 {
-    public function sendLoginOtp(string $mobile, string $code): void
+    public function sendOtp(string $mobile, string $code): array
     {
-        Log::info('Login OTP', [
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+            'x-api-key' => config('services.sms_ir.api_key'),
+        ])->post('https://api.sms.ir/v1/send/verify', [
             'mobile' => $mobile,
-            'code' => $code,
+            'templateId' => config('services.sms_ir.template_id'),
+            'parameters' => [
+                [
+                    'name' => 'OTP',
+                    'value' => $code,
+                ],
+            ],
         ]);
 
-        // اینجا بعداً سرویس پیامکی واقعی را صدا می‌زنید.
+        if ($response->failed()) {
+            throw new \Exception(
+                'ارسال پیامک با خطا مواجه شد: ' . $response->body()
+            );
+        }
+
+        $data = $response->json();
+
+        if (($data['status'] ?? null) !== 1) {
+            throw new \Exception(
+                $data['message'] ?? 'ارسال پیامک ناموفق بود.'
+            );
+        }
+
+        return $data;
     }
 }
-
