@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'sms_ir' => [
+        'api_key' => env('SMS_IR_API_KEY'),
+        'template_id' => env('SMS_IR_TEMPLATE_ID'),
+    ],
+
 ];
